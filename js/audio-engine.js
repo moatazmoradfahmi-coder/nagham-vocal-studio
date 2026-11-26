@@ -5,6 +5,7 @@
  */
 
 import { DEFAULT_MIX_STATE } from './presets.js';
+import { applyAutoTuneToBuffer } from './autotune.js';
 
 export function dbToGain(db) {
   if (db <= -60) return 0;
@@ -1093,8 +1094,10 @@ export class StudioAudioEngine {
     this._lastGateThresh = null;
     this._lastGatedTakeId = null;
 
-    // Cached pitch-shifted harmony buffer
+    // Cached pitch-shifted harmony & Auto-Tune buffers
     this._harmonyCache = { key: '', buffer: null };
+    this._autoTuneCache = { key: '', buffer: null, stats: null };
+    this.lastAutoTuneStats = null;
 
     // Transport state
     this.isPlaying = false;
@@ -1338,32 +1341,74 @@ export class StudioAudioEngine {
     this._lastGateThresh = null;
     this._lastGatedTakeId = null;
     this._harmonyCache = { key: '', buffer: null };
+    this._autoTuneCache = { key: '', buffer: null, stats: null };
+    this.lastAutoTuneStats = null;
+  }
+
+  _invalidateAutoTune() {
+    this._autoTuneCache = { key: '', buffer: null, stats: null };
+    this._harmonyCache = { key: '', buffer: null };
   }
 
   _getProcessedVocalBuffer(ctx) {
     const raw = this.activeVocalBuffer;
     if (!raw) return null;
     const takeId = this.vocalTakes[this.activeTakeIndex]?.id;
-    const thresh = this.state.vocal.fxEnabled ? this.state.vocalFx.gateThreshold : -80;
+    const fx = this.state.vocalFx;
+    const fxOn = this.state.vocal.fxEnabled;
+    const thresh = fxOn ? fx.gateThreshold : -80;
 
+    let gated = null;
     if (ctx === this.ctx && this.gatedVocalBuffer && this._lastGateThresh === thresh && this._lastGatedTakeId === takeId) {
-      return this.gatedVocalBuffer;
+      gated = this.gatedVocalBuffer;
+    } else {
+      gated = applyNoiseGate(ctx, raw, thresh);
+      if (ctx === this.ctx) {
+        this.gatedVocalBuffer = gated;
+        this._lastGateThresh = thresh;
+        this._lastGatedTakeId = takeId;
+      }
     }
 
-    const processed = applyNoiseGate(ctx, raw, thresh);
-    if (ctx === this.ctx) {
-      this.gatedVocalBuffer = processed;
-      this._lastGateThresh = thresh;
-      this._lastGatedTakeId = takeId;
+    if (!fxOn || !fx.autoTuneEnabled) {
+      return gated;
     }
-    return processed;
+
+    const atKey = `${ctx.sampleRate}_${takeId}_${thresh}_${fx.autoTuneKey}_${fx.autoTuneScale}_${fx.autoTuneSpeed}_${fx.autoTuneAmount}`;
+    if (ctx === this.ctx && this._autoTuneCache.key === atKey && this._autoTuneCache.buffer) {
+      this.lastAutoTuneStats = this._autoTuneCache.stats;
+      return this._autoTuneCache.buffer;
+    }
+
+    const result = applyAutoTuneToBuffer(ctx, gated, {
+      key: Number(fx.autoTuneKey),
+      scale: fx.autoTuneScale,
+      retuneSpeed: Number(fx.autoTuneSpeed),
+      strength: Number(fx.autoTuneAmount),
+    });
+
+    if (ctx === this.ctx && result) {
+      this._autoTuneCache = { key: atKey, buffer: result.buffer, stats: result.stats };
+      this.lastAutoTuneStats = result.stats;
+    }
+    return result ? result.buffer : gated;
+  }
+
+  computeAutoTunePreview() {
+    if (!this.activeVocalBuffer || !this.state.vocal.fxEnabled || !this.state.vocalFx.autoTuneEnabled) {
+      return null;
+    }
+    const ctx = this.ensureContext();
+    this._getProcessedVocalBuffer(ctx);
+    return this.lastAutoTuneStats;
   }
 
   _getHarmonyBuffer(ctx, vocalBuf) {
     if (!vocalBuf || !this.state.vocal.fxEnabled || !this.state.vocalFx.harmonyEnabled) return null;
-    const semi = Number(this.state.vocalFx.harmonyInterval) || 7;
+    const fx = this.state.vocalFx;
+    const semi = Number(fx.harmonyInterval) || 7;
     const takeId = this.vocalTakes[this.activeTakeIndex]?.id || 'v';
-    const key = `${ctx.sampleRate}_${takeId}_${semi}_${this.state.vocalFx.gateThreshold}`;
+    const key = `${ctx.sampleRate}_${takeId}_${semi}_${fx.gateThreshold}_${fx.autoTuneEnabled}_${fx.autoTuneKey}_${fx.autoTuneScale}_${fx.autoTuneSpeed}_${fx.autoTuneAmount}`;
     if (ctx === this.ctx && this._harmonyCache.key === key && this._harmonyCache.buffer) {
       return this._harmonyCache.buffer;
     }
@@ -2013,15 +2058,27 @@ export class StudioAudioEngine {
       else bSrc.start(0, -bOffset);
     }
 
-    // 2. Vocal Track + All FX + Optional Harmony Layer
+    // 2. Vocal Track + Auto-Tune + All FX + Optional Harmony Layer
     if (this.activeVocalBuffer && vocalGain > 0) {
-      const gatedVocal = applyNoiseGate(
+      let processedVocal = applyNoiseGate(
         offCtx,
         this.activeVocalBuffer,
         this.state.vocal.fxEnabled ? this.state.vocalFx.gateThreshold : -80
       );
+
+      if (this.state.vocal.fxEnabled && this.state.vocalFx.autoTuneEnabled) {
+        const fx = this.state.vocalFx;
+        const tuned = applyAutoTuneToBuffer(offCtx, processedVocal, {
+          key: Number(fx.autoTuneKey),
+          scale: fx.autoTuneScale,
+          retuneSpeed: Number(fx.autoTuneSpeed),
+          strength: Number(fx.autoTuneAmount),
+        });
+        if (tuned && tuned.buffer) processedVocal = tuned.buffer;
+      }
+
       const vSrc = offCtx.createBufferSource();
-      vSrc.buffer = gatedVocal;
+      vSrc.buffer = processedVocal;
 
       const ir = createReverbIR(offCtx, this.state.vocalFx.reverbType, this.state.vocalFx.reverbDecay);
       const vocalChain = buildVocalFxChain(offCtx, this.state, ir);
@@ -2043,7 +2100,7 @@ export class StudioAudioEngine {
       if (this.state.vocal.fxEnabled && this.state.vocalFx.harmonyEnabled) {
         const hBuf = createPitchShiftedHarmonyBuffer(
           offCtx,
-          gatedVocal,
+          processedVocal,
           Number(this.state.vocalFx.harmonyInterval) || 7
         );
         const hSrc = offCtx.createBufferSource();

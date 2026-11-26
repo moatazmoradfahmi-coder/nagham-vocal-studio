@@ -1547,6 +1547,103 @@ kbd {
 }
 
 /* ==========================================================================
+   Vocal Auto-Tune Module & Pitch Correction Graph
+   ========================================================================== */
+.autotune-module {
+  border-color: rgba(229, 154, 60, 0.22);
+  background: linear-gradient(180deg, rgba(229, 154, 60, 0.045) 0%, var(--bg-module) 45%);
+}
+
+.autotune-module.is-active {
+  border-color: rgba(229, 154, 60, 0.55);
+}
+
+.autotune-pill {
+  margin-inline-start: auto;
+}
+
+.autotune-pill + .fx-pill {
+  margin-inline-start: 4px;
+}
+
+.autotune-pill.active {
+  background: var(--accent-amber-soft);
+  border-color: var(--accent-amber);
+  color: var(--accent-amber);
+}
+
+.autotune-power-btn {
+  height: 30px;
+  padding: 0 14px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.autotune-power-btn:hover {
+  background: #2e3545;
+}
+
+.autotune-power-btn.active {
+  background: var(--accent-amber);
+  border-color: var(--accent-amber);
+  color: #12100d;
+}
+
+.autotune-modes-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.autotune-legend {
+  margin-inline-start: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.autotune-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 3px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.legend-dot.orig {
+  background: rgba(56, 189, 248, 0.85);
+}
+
+.legend-dot.tuned {
+  background: var(--accent-amber);
+}
+
+.autotune-canvas {
+  width: 100%;
+  height: 102px;
+  display: block;
+  border-radius: var(--radius-sm);
+  background: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-inset);
+}
+
+/* ==========================================================================
    Responsive Breakpoints
    ========================================================================== */
 @media (max-width: 1080px) {

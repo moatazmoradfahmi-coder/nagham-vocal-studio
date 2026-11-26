@@ -192,6 +192,7 @@
           <div class="track-header">
             <span class="track-badge vocal">تراك 2</span>
             <h2 class="track-name">صوت الغناء (Vocals)</h2>
+            <button id="btnTrackAutoTuneToggle" class="fx-pill autotune-pill" title="تشغيل أو إغلاق الأوتو تيون للفوكال">Auto-Tune مغلق</button>
             <button id="btnVocalFxToggle" class="fx-pill active" title="تفعيل أو إيقاف جميع فلاتر الصوت">FX مفعّل</button>
           </div>
 
@@ -249,7 +250,7 @@
     <section class="workbench-section">
       <nav class="studio-tabs" role="tablist" aria-label="أقسام المعالجة الصوتية والتأليف">
         <button id="tabBtnVocalFx" class="tab-btn active" role="tab" aria-selected="true" data-tab="vocal-fx">
-          فلاتر وإيفكتات الصوت (Vocal FX)
+          فلاتر وأوتو تيون الصوت (Vocal FX)
         </button>
         <button id="tabBtnComposer" class="tab-btn" role="tab" aria-selected="false" data-tab="composer">
           تأليف الكوردات والآلات والإيقاع (التأليف الذكي)
@@ -270,6 +271,62 @@
         </div>
 
         <div class="fx-rack-grid">
+          <!-- Module 0: Vocal Auto-Tune (Scale & Maqam Pitch Correction) -->
+          <article id="autoTuneModuleCard" class="rack-module span-2 autotune-module">
+            <header class="module-head">
+              <div>
+                <h3>أوتو تيون الفوكال (Auto-Tune Pitch Correction)</h3>
+                <p>تصحيح نغمة الغناء تلقائياً على المقام والطبقة المختارة (طبيعي ناعم أو هارد أوتو تيون عصري) مع إمكانية تشغيله أو إغلاقه في أي لحظة</p>
+              </div>
+              <div class="module-head-actions">
+                <span id="autoTuneStatusBadge" class="module-tag mono">مغلق (Bypass)</span>
+                <button id="btnToggleAutoTune" class="autotune-power-btn">تشغيل الأوتو تيون</button>
+              </div>
+            </header>
+
+            <div class="autotune-modes-row">
+              <span class="metro-lbl">أوضاع سريعة:</span>
+              <button id="btnAtModeNatural" class="small-btn" type="button">تصحيح طبيعي ناعم</button>
+              <button id="btnAtModePop" class="small-btn" type="button">بوب استوديو متوازن</button>
+              <button id="btnAtModeHard" class="small-btn" type="button">هارد أوتو تيون (تراب / T-Pain)</button>
+              <div class="autotune-legend">
+                <span><i class="legend-dot orig"></i> الصوت الأصلي</span>
+                <span><i class="legend-dot tuned"></i> بعد الأوتو تيون</span>
+              </div>
+            </div>
+
+            <canvas id="autoTuneCanvas" class="autotune-canvas"></canvas>
+
+            <div class="controls-grid cols-4">
+              <div class="control-item">
+                <div class="control-top"><label for="fxAutoTuneKey">الطبقة الموسيقية (Key)</label></div>
+                <select id="fxAutoTuneKey" class="studio-select">
+                  <option value="-1" selected>تلقائي (من صوتك)</option>
+                </select>
+              </div>
+              <div class="control-item">
+                <div class="control-top"><label for="fxAutoTuneScale">المقام / السلم (Scale)</label></div>
+                <select id="fxAutoTuneScale" class="studio-select">
+                  <option value="auto" selected>تلقائي (يكتشفه من غنائك)</option>
+                  <option value="chromatic">كروماتيك (كل النغمات الـ 12)</option>
+                  <option value="minor">نهاوند (Minor)</option>
+                  <option value="major">عجم (Major)</option>
+                  <option value="hijaz">حجاز شرقي (Hijaz)</option>
+                  <option value="kurd">كرد (Kurd)</option>
+                  <option value="bayati">بياتي / دوري (Bayati)</option>
+                </select>
+              </div>
+              <div class="control-item">
+                <div class="control-top"><label for="fxAutoTuneSpeed">سرعة التصحيح (Retune Speed)</label><span id="valFxAutoTuneSpeed" class="mono">65%</span></div>
+                <input id="fxAutoTuneSpeed" type="range" min="0" max="100" step="1" value="65" />
+              </div>
+              <div class="control-item">
+                <div class="control-top"><label for="fxAutoTuneAmount">قوة التصحيح (Strength)</label><span id="valFxAutoTuneAmount" class="mono">85%</span></div>
+                <input id="fxAutoTuneAmount" type="range" min="0" max="100" step="1" value="85" />
+              </div>
+            </div>
+          </article>
+
           <!-- Module 1: EQ & Cleanup -->
           <article class="rack-module span-2">
             <header class="module-head">

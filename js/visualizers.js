@@ -381,3 +381,99 @@ export class StereoVuMeter {
     drawBar(this.peakR, this.holdR, barH + 4, barH);
   }
 }
+
+/**
+ * Draw Auto-Tune Pitch Correction Graph (Original Sung Pitch vs Corrected Pitch)
+ */
+export function drawAutoTuneGraph(canvas, stats, durationSec = 0, playheadSec = 0, enabled = false) {
+  const { ctx, w, h } = prepCanvas(canvas);
+  ctx.clearRect(0, 0, w, h);
+
+  // Subtle horizontal semitone lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx.lineWidth = 1;
+  for (let i = 1; i < 6; i++) {
+    const y = (h / 6) * i;
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(w, y);
+    ctx.stroke();
+  }
+
+  if (!enabled) {
+    ctx.fillStyle = 'rgba(242, 239, 233, 0.34)';
+    ctx.font = '11px "Cairo", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('الأوتو تيون مغلق حالياً — اضغط «تشغيل الأوتو تيون» لتصحيح النغمات وعرض منحنى التصحيح', w / 2, h / 2);
+    return;
+  }
+
+  const contour = stats?.contour;
+  if (!contour || contour.length < 2) {
+    ctx.fillStyle = 'rgba(242, 239, 233, 0.4)';
+    ctx.font = '11px "Cairo", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('سجّل صوتك أو شغّل الفوكال لعرض منحنى تصحيح الأوتو تيون (الأصلي مقابل المُصحّح)', w / 2, h / 2);
+    return;
+  }
+
+  // Find MIDI min/max range
+  let minMidi = Infinity;
+  let maxMidi = -Infinity;
+  for (const pt of contour) {
+    if (pt.rawMidi < minMidi) minMidi = pt.rawMidi;
+    if (pt.rawMidi > maxMidi) maxMidi = pt.rawMidi;
+    if (pt.tunedMidi < minMidi) minMidi = pt.tunedMidi;
+    if (pt.tunedMidi > maxMidi) maxMidi = pt.tunedMidi;
+  }
+  minMidi = Math.floor(minMidi - 1.5);
+  maxMidi = Math.ceil(maxMidi + 1.5);
+  const midiSpan = Math.max(4, maxMidi - minMidi);
+  const dur = Math.max(durationSec, contour[contour.length - 1].t, 0.5);
+
+  const toX = (t) => (t / dur) * w;
+  const toY = (m) => h - 10 - ((m - minMidi) / midiSpan) * (h - 20);
+
+  // Plot original sung pitch (subtle cyan dashed)
+  ctx.strokeStyle = 'rgba(56, 189, 248, 0.55)';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([4, 3]);
+  ctx.beginPath();
+  let lastT = -10;
+  for (const pt of contour) {
+    const x = toX(pt.t);
+    const y = toY(pt.rawMidi);
+    if (pt.t - lastT > 0.14) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+    lastT = pt.t;
+  }
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Plot Auto-Tuned pitch (crisp warm amber solid)
+  ctx.strokeStyle = '#e59a3c';
+  ctx.lineWidth = 2.2;
+  ctx.beginPath();
+  lastT = -10;
+  for (const pt of contour) {
+    const x = toX(pt.t);
+    const y = toY(pt.tunedMidi);
+    if (pt.t - lastT > 0.14) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+    lastT = pt.t;
+  }
+  ctx.stroke();
+
+  // Live Playhead
+  if (playheadSec > 0 && playheadSec <= dur) {
+    const px = toX(playheadSec);
+    ctx.strokeStyle = 'rgba(248, 250, 252, 0.85)';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(px, 0);
+    ctx.lineTo(px, h);
+    ctx.stroke();
+  }
+}

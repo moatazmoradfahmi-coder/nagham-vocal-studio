@@ -85,6 +85,13 @@ export const DEFAULT_MIX_STATE = {
     lofiStyle: 'radio',   // 'telephone' | 'radio' | 'megaphone'
     lofiMix: 75,          // 0 - 100%
 
+    // Auto-Tune Pitch Correction
+    autoTuneEnabled: false,
+    autoTuneKey: -1,          // -1 = Auto-detect, 0..11 = C..B
+    autoTuneScale: 'auto',    // 'auto' | 'chromatic' | 'minor' | 'major' | 'hijaz' | 'kurd' | 'bayati'
+    autoTuneSpeed: 65,        // 0 (natural) - 100 (hard trap snap)
+    autoTuneAmount: 85,       // 0 - 100% correction strength
+
     // Creative FX: Vocal Drive / Overdrive Grit
     driveEnabled: false,
     driveAmount: 25,      // 0 - 100%
@@ -107,6 +114,11 @@ const CREATIVE_OFF = {
   compEnabled: true,
   reverbEnabled: true,
   delayEnabled: true,
+  autoTuneEnabled: false,
+  autoTuneKey: -1,
+  autoTuneScale: 'auto',
+  autoTuneSpeed: 65,
+  autoTuneAmount: 85,
   harmonyEnabled: false,
   harmonyInterval: 7,
   harmonyMix: 25,
@@ -247,6 +259,42 @@ export const VOCAL_PRESETS = [
       delayTimeMs: 300,
       delayFeedback: 32,
       delayToneHz: 4200,
+    },
+  },
+  {
+    id: 'autotune_trap',
+    name: 'أوتو تيون تراب / بوب',
+    subtitle: 'Auto-Tune Modern',
+    description: 'تصحيح نغمة قوي وسريع مع لمعان عالي وصدى عصري وديلاي متناغم',
+    fx: {
+      ...CREATIVE_OFF,
+      autoTuneEnabled: true,
+      autoTuneKey: -1,
+      autoTuneScale: 'auto',
+      autoTuneSpeed: 88,
+      autoTuneAmount: 95,
+      hpfFreq: 100,
+      gateThreshold: -48,
+      eqLow: -2.0,
+      eqWarmth: 0.0,
+      eqPresence: 3.5,
+      eqAir: 4.5,
+      deEsser: 42,
+      warmth: 24,
+      compThreshold: -22,
+      compRatio: 5.2,
+      compAttack: 6,
+      compRelease: 110,
+      compMakeup: 4.5,
+      doublerMix: 20,
+      reverbType: 'plate',
+      reverbMix: 22,
+      reverbDecay: 1.8,
+      reverbPreDelay: 25,
+      delayMix: 18,
+      delayTimeMs: 280,
+      delayFeedback: 30,
+      delayToneHz: 3600,
     },
   },
   {

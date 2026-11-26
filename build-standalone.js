@@ -13,15 +13,17 @@ const lamejs = fs.readFileSync(path.join(root, 'vendor/lamejs.iife.js'), 'utf8')
 const stripImportsExports = (src) =>
   src
     .replace(/^\s*import\s+[\s\S]*?from\s+['"][^'"]+['"];?\s*$/gm, '')
+    .replace(/^\s*export\s*\{[\s\S]*?\};?\s*$/gm, '')
     .replace(/^\s*export\s+(?=(const|let|var|function|async\s+function|class)\b)/gm, '');
 
 const presetsJs = stripImportsExports(fs.readFileSync(path.join(root, 'js/presets.js'), 'utf8'));
+const autotuneJs = stripImportsExports(fs.readFileSync(path.join(root, 'js/autotune.js'), 'utf8'));
 const engineJs = stripImportsExports(fs.readFileSync(path.join(root, 'js/audio-engine.js'), 'utf8'));
 const composerJs = stripImportsExports(fs.readFileSync(path.join(root, 'js/auto-composer.js'), 'utf8'));
 const visualizersJs = stripImportsExports(fs.readFileSync(path.join(root, 'js/visualizers.js'), 'utf8'));
 const appJs = stripImportsExports(fs.readFileSync(path.join(root, 'js/app.js'), 'utf8'));
 
-const combinedApp = `(() => {\n"use strict";\n${presetsJs}\n${engineJs}\n${composerJs}\n${visualizersJs}\n${appJs}\n})();`;
+const combinedApp = `(() => {\n"use strict";\n${presetsJs}\n${autotuneJs}\n${engineJs}\n${composerJs}\n${visualizersJs}\n${appJs}\n})();`;
 
 // Escape closing script tags if any exist inside code
 const safeScript = (code) => code.replace(/<\/script>/gi, '<\\/script>');

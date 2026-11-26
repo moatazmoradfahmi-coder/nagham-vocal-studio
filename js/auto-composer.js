@@ -9,82 +9,9 @@
  */
 
 import { createReverbIR, clamp } from './audio-engine.js';
+import { NOTE_NAMES, NOTE_NAMES_AR, SCALES, detectFramePitchHz } from './autotune.js';
 
-export const NOTE_NAMES = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
-export const NOTE_NAMES_AR = ['دو (C)', 'دو# (C#)', 'ري (D)', 'مي♭ (Eb)', 'مي (E)', 'فا (F)', 'فا# (F#)', 'صول (G)', 'لا♭ (Ab)', 'لا (A)', 'سي♭ (Bb)', 'سي (B)'];
-
-export const SCALES = {
-  minor: {
-    id: 'minor',
-    name: 'نهاوند / Minor',
-    intervals: [0, 2, 3, 5, 7, 8, 10],
-    chords: [
-      { degree: 0, quality: 'min', label: 'i' },
-      { degree: 3, quality: 'maj', label: 'III' },
-      { degree: 5, quality: 'min', label: 'iv' },
-      { degree: 7, quality: 'min', label: 'v' },
-      { degree: 7, quality: 'maj', label: 'V' },
-      { degree: 8, quality: 'maj', label: 'VI' },
-      { degree: 10, quality: 'maj', label: 'VII' },
-    ],
-    defaultProg: [0, 5, 2, 6], // i - VI - III - VII (indices into chords)
-  },
-  major: {
-    id: 'major',
-    name: 'عجم / Major',
-    intervals: [0, 2, 4, 5, 7, 9, 11],
-    chords: [
-      { degree: 0, quality: 'maj', label: 'I' },
-      { degree: 2, quality: 'min', label: 'ii' },
-      { degree: 4, quality: 'min', label: 'iii' },
-      { degree: 5, quality: 'maj', label: 'IV' },
-      { degree: 7, quality: 'maj', label: 'V' },
-      { degree: 9, quality: 'min', label: 'vi' },
-    ],
-    defaultProg: [0, 4, 5, 3], // I - V - vi - IV
-  },
-  hijaz: {
-    id: 'hijaz',
-    name: 'حجاز شرقي (Hijaz)',
-    intervals: [0, 1, 4, 5, 7, 8, 10],
-    chords: [
-      { degree: 0, quality: 'maj', label: 'I (حجاز)' },
-      { degree: 1, quality: 'maj', label: 'bII' },
-      { degree: 5, quality: 'min', label: 'iv' },
-      { degree: 7, quality: 'dim', label: 'v°' },
-      { degree: 8, quality: 'maj', label: 'bVI' },
-      { degree: 10, quality: 'min', label: 'bvii' },
-    ],
-    defaultProg: [0, 1, 2, 0], // I - bII - iv - I
-  },
-  kurd: {
-    id: 'kurd',
-    name: 'كرد (Kurd / Phrygian)',
-    intervals: [0, 1, 3, 5, 7, 8, 10],
-    chords: [
-      { degree: 0, quality: 'min', label: 'i (كرد)' },
-      { degree: 1, quality: 'maj', label: 'bII' },
-      { degree: 3, quality: 'maj', label: 'bIII' },
-      { degree: 5, quality: 'min', label: 'iv' },
-      { degree: 8, quality: 'maj', label: 'bVI' },
-      { degree: 10, quality: 'min', label: 'bvii' },
-    ],
-    defaultProg: [0, 1, 2, 1], // i - bII - bIII - bII
-  },
-  bayati: {
-    id: 'bayati',
-    name: 'بياتي / دوري (Bayati Feel)',
-    intervals: [0, 2, 3, 5, 7, 9, 10],
-    chords: [
-      { degree: 0, quality: 'min', label: 'i' },
-      { degree: 3, quality: 'maj', label: 'bIII' },
-      { degree: 5, quality: 'maj', label: 'IV' },
-      { degree: 7, quality: 'min', label: 'v' },
-      { degree: 10, quality: 'maj', label: 'bVII' },
-    ],
-    defaultProg: [0, 4, 2, 0], // i - bVII - IV - i
-  },
-};
+export { NOTE_NAMES, NOTE_NAMES_AR, SCALES, detectFramePitchHz };
 
 export const CHORD_QUALITIES = {
   maj: { suffix: '', intervals: [0, 4, 7] },
@@ -121,78 +48,9 @@ export function formatChordName(rootPc, quality) {
 
 export function getChordMidiNotes(rootPc, quality, baseOctaveMidi = 48) {
   const q = CHORD_QUALITIES[quality] || CHORD_QUALITIES.maj;
-  // Keep chord voicing centered nicely in mid register (C3 - G4)
   let rootMidi = baseOctaveMidi + (((rootPc % 12) + 12) % 12);
   if (rootMidi > 57) rootMidi -= 12;
   return q.intervals.map((iv) => rootMidi + iv);
-}
-
-/**
- * Detect fundamental frequency (Hz) in a frame of mono audio using normalized autocorrelation.
- * Returns null if frame is silent or unvoiced (e.g. consonants/breath).
- */
-export function detectFramePitchHz(samples, sampleRate) {
-  const n = samples.length;
-  let rms = 0;
-  for (let i = 0; i < n; i++) rms += samples[i] * samples[i];
-  rms = Math.sqrt(rms / n);
-  if (rms < 0.014) return null; // Too quiet / unvoiced
-
-  // Vocal fundamental range: ~80 Hz (E2) to ~900 Hz (A5)
-  const minLag = Math.max(16, Math.floor(sampleRate / 900));
-  const maxLag = Math.min(Math.floor(n / 2), Math.floor(sampleRate / 80));
-
-  const corrs = new Float32Array(maxLag + 1);
-  let bestCorr = 0;
-
-  for (let lag = minLag; lag <= maxLag; lag++) {
-    let num = 0;
-    let denA = 0;
-    let denB = 0;
-    const limit = n - lag;
-    for (let i = 0; i < limit; i += 2) {
-      const a = samples[i];
-      const b = samples[i + lag];
-      num += a * b;
-      denA += a * a;
-      denB += b * b;
-    }
-    const denom = Math.sqrt(denA * denB);
-    const corr = denom > 1e-8 ? num / denom : 0;
-    corrs[lag] = corr;
-    if (corr > bestCorr) bestCorr = corr;
-  }
-
-  if (bestCorr < 0.52) return null;
-
-  // Pick the FIRST local maximum that reaches at least 88% of bestCorr
-  // to avoid subharmonic / octave-down errors (e.g., picking 110Hz instead of 440Hz).
-  const threshold = bestCorr * 0.88;
-  let bestLag = -1;
-  for (let lag = minLag + 1; lag < maxLag; lag++) {
-    if (corrs[lag] >= threshold && corrs[lag] >= corrs[lag - 1] && corrs[lag] >= corrs[lag + 1]) {
-      bestLag = lag;
-      break;
-    }
-  }
-  if (bestLag <= 0) {
-    for (let lag = minLag; lag <= maxLag; lag++) {
-      if (corrs[lag] === bestCorr) { bestLag = lag; break; }
-    }
-  }
-
-  // Parabolic interpolation around peak for sub-sample frequency precision
-  if (bestLag > minLag && bestLag < maxLag) {
-    const y0 = corrs[bestLag - 1];
-    const y1 = corrs[bestLag];
-    const y2 = corrs[bestLag + 1];
-    const denom = 2 * (y0 - 2 * y1 + y2);
-    if (Math.abs(denom) > 1e-6) {
-      bestLag += (y0 - y2) / denom;
-    }
-  }
-
-  return bestLag > 0 ? sampleRate / bestLag : null;
 }
 
 /**

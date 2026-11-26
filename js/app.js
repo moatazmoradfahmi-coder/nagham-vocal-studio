@@ -6,6 +6,7 @@
 
 import { StudioAudioEngine, gainToDb, clamp } from './audio-engine.js';
 import { VOCAL_PRESETS, MASTER_PRESETS, DEMO_BEATS } from './presets.js';
+import { AUTOTUNE_SCALES } from './autotune.js';
 import {
   NOTE_NAMES,
   NOTE_NAMES_AR,
@@ -22,6 +23,7 @@ import {
   computeWaveformPeaks,
   drawWaveformTrack,
   drawEqCurve,
+  drawAutoTuneGraph,
   drawSpectrum,
   StereoVuMeter,
 } from './visualizers.js';
@@ -236,13 +238,19 @@ function initDemoBeatsAndPresets() {
     masterGrid.appendChild(btn);
   });
 
-  // Populate Auto-Composer selects
+  // Populate Auto-Composer & Auto-Tune Key selects
   const rootSel = $('compRootSelect');
+  const atKeySel = $('fxAutoTuneKey');
   NOTE_NAMES_AR.forEach((label, idx) => {
     const opt = document.createElement('option');
     opt.value = String(idx);
     opt.textContent = label;
     rootSel.appendChild(opt);
+
+    const opt2 = document.createElement('option');
+    opt2.value = String(idx);
+    opt2.textContent = label;
+    atKeySel.appendChild(opt2);
   });
 
   const playStyleSel = $('compPlayStyle');
@@ -267,9 +275,12 @@ function initDemoBeatsAndPresets() {
 
 function applyVocalPreset(preset) {
   activeVocalPresetId = preset.id;
-  const harmonyChanged =
+  const needsRestart =
     engine.state.vocalFx.harmonyEnabled !== preset.fx.harmonyEnabled ||
-    engine.state.vocalFx.harmonyInterval !== preset.fx.harmonyInterval;
+    engine.state.vocalFx.harmonyInterval !== preset.fx.harmonyInterval ||
+    engine.state.vocalFx.autoTuneEnabled !== preset.fx.autoTuneEnabled ||
+    engine.state.vocalFx.autoTuneSpeed !== preset.fx.autoTuneSpeed ||
+    engine.state.vocalFx.autoTuneAmount !== preset.fx.autoTuneAmount;
 
   Object.assign(engine.state.vocalFx, preset.fx);
   engine.state.vocal.fxEnabled = preset.id !== 'flat_raw';
@@ -281,7 +292,8 @@ function applyVocalPreset(preset) {
 
   syncControlsFromState();
   engine.syncLiveParams({ reverbIRChanged: true, warmthChanged: true, driveChanged: true, eqToggleChanged: true });
-  if (harmonyChanged) schedulePlaybackRefresh();
+  refreshAutoTunePreview();
+  if (needsRestart) schedulePlaybackRefresh();
   drawEqCurve($('eqCurveCanvas'), engine);
   showToast(`تم تطبيق قالب الصوت: ${preset.name}`, 'success');
 }
@@ -612,6 +624,7 @@ function refreshVocalTakesUI() {
   if (engine.activeVocalBuffer) {
     vocalPeaks = computeWaveformPeaks(engine.activeVocalBuffer, 650);
   }
+  refreshAutoTunePreview();
 }
 
 $('selectVocalTake').addEventListener('change', (e) => {
@@ -620,6 +633,7 @@ $('selectVocalTake').addEventListener('change', (e) => {
   if (engine.activeVocalBuffer) {
     vocalPeaks = computeWaveformPeaks(engine.activeVocalBuffer, 650);
   }
+  refreshAutoTunePreview();
 });
 
 $('btnDeleteTake').addEventListener('click', () => {
@@ -869,6 +883,19 @@ function syncControlsFromState() {
   $('btnVocalSolo').classList.toggle('active-solo', s.vocal.solo);
 
   setPill('btnVocalFxToggle', s.vocal.fxEnabled, 'FX مفعّل', 'FX متوقف');
+  const atActive = !!(s.vocal.fxEnabled && fx.autoTuneEnabled);
+  setPill('btnTrackAutoTuneToggle', atActive, 'Auto-Tune مفعّل', 'Auto-Tune مغلق');
+  setPill('btnToggleAutoTune', fx.autoTuneEnabled, 'إغلاق الأوتو تيون (مفعّل)', 'تشغيل الأوتو تيون');
+  $('autoTuneModuleCard').classList.toggle('is-active', atActive);
+
+  $('fxAutoTuneKey').value = String(fx.autoTuneKey);
+  $('fxAutoTuneScale').value = fx.autoTuneScale;
+  $('fxAutoTuneSpeed').value = fx.autoTuneSpeed;
+  $('valFxAutoTuneSpeed').textContent = `${fx.autoTuneSpeed}%`;
+  $('fxAutoTuneAmount').value = fx.autoTuneAmount;
+  $('valFxAutoTuneAmount').textContent = `${fx.autoTuneAmount}%`;
+  updateAutoTuneStatusBadge();
+
   setPill('btnToggleEq', fx.eqEnabled !== false);
   setPill('btnToggleComp', fx.compEnabled !== false);
   setPill('btnToggleReverb', fx.reverbEnabled !== false, 'صدى مفعّل', 'صدى مطفأ');
@@ -1005,7 +1032,126 @@ $('btnVocalFxToggle').addEventListener('click', () => {
   engine.state.vocal.fxEnabled = !engine.state.vocal.fxEnabled;
   syncControlsFromState();
   engine.syncLiveParams();
+  refreshAutoTunePreview();
+  schedulePlaybackRefresh();
   drawEqCurve($('eqCurveCanvas'), engine);
+});
+
+// Auto-Tune Status, Preview & Controls
+let autoTunePreviewTimer = null;
+
+function updateAutoTuneStatusBadge() {
+  const badge = $('autoTuneStatusBadge');
+  const fx = engine.state.vocalFx;
+  if (!fx.autoTuneEnabled || !engine.state.vocal.fxEnabled) {
+    badge.textContent = 'مغلق (Bypass)';
+    return;
+  }
+  const st = engine.lastAutoTuneStats;
+  if (st && st.voicedFrames > 0) {
+    const scaleName = AUTOTUNE_SCALES[st.scaleId]?.name || st.scaleId;
+    const keyName = NOTE_NAMES_AR[st.rootPc] || NOTE_NAMES[st.rootPc];
+    badge.textContent = `مفعّل: ${keyName} • ${scaleName} (متوسط التصحيح ${Math.round(st.avgCentsCorrected)} cents)`;
+  } else {
+    badge.textContent = 'مفعّل — جاهز للتصحيح على صوتك';
+  }
+}
+
+function refreshAutoTunePreview() {
+  clearTimeout(autoTunePreviewTimer);
+  const fx = engine.state.vocalFx;
+  if (!fx.autoTuneEnabled || !engine.state.vocal.fxEnabled) {
+    updateAutoTuneStatusBadge();
+    return;
+  }
+  autoTunePreviewTimer = setTimeout(() => {
+    if (engine.activeVocalBuffer) {
+      engine.computeAutoTunePreview();
+    }
+    updateAutoTuneStatusBadge();
+  }, 90);
+}
+
+function toggleAutoTune(forceVal = null) {
+  const next = forceVal !== null ? !!forceVal : !engine.state.vocalFx.autoTuneEnabled;
+  engine.state.vocalFx.autoTuneEnabled = next;
+  if (next && !engine.state.vocal.fxEnabled) {
+    engine.state.vocal.fxEnabled = true;
+  }
+  engine._invalidateAutoTune();
+  syncControlsFromState();
+  refreshAutoTunePreview();
+  schedulePlaybackRefresh();
+  showToast(
+    next
+      ? 'تم تشغيل الأوتو تيون للفوكال! اضغط تشغيل لسماع تصحيح النغمة.'
+      : 'تم إغلاق الأوتو تيون (الصوت بدون تصحيح نغمة).',
+    next ? 'success' : 'info'
+  );
+}
+
+$('btnToggleAutoTune').addEventListener('click', () => toggleAutoTune());
+$('btnTrackAutoTuneToggle').addEventListener('click', () => toggleAutoTune());
+
+$('btnAtModeNatural').addEventListener('click', () => {
+  engine.state.vocalFx.autoTuneEnabled = true;
+  engine.state.vocalFx.autoTuneSpeed = 28;
+  engine.state.vocalFx.autoTuneAmount = 65;
+  engine._invalidateAutoTune();
+  syncControlsFromState();
+  refreshAutoTunePreview();
+  schedulePlaybackRefresh();
+  showToast('وضع الأوتو تيون: تصحيح طبيعي ناعم (يحافظ على إحساس الصوت).', 'success');
+});
+
+$('btnAtModePop').addEventListener('click', () => {
+  engine.state.vocalFx.autoTuneEnabled = true;
+  engine.state.vocalFx.autoTuneSpeed = 62;
+  engine.state.vocalFx.autoTuneAmount = 85;
+  engine._invalidateAutoTune();
+  syncControlsFromState();
+  refreshAutoTunePreview();
+  schedulePlaybackRefresh();
+  showToast('وضع الأوتو تيون: بوب استوديو متوازن.', 'success');
+});
+
+$('btnAtModeHard').addEventListener('click', () => {
+  engine.state.vocalFx.autoTuneEnabled = true;
+  engine.state.vocalFx.autoTuneSpeed = 96;
+  engine.state.vocalFx.autoTuneAmount = 100;
+  engine._invalidateAutoTune();
+  syncControlsFromState();
+  refreshAutoTunePreview();
+  schedulePlaybackRefresh();
+  showToast('وضع الأوتو تيون: هارد أوتو تيون (تراب / T-Pain).', 'success');
+});
+
+$('fxAutoTuneKey').addEventListener('change', (e) => {
+  engine.state.vocalFx.autoTuneKey = parseInt(e.target.value, 10);
+  engine._invalidateAutoTune();
+  refreshAutoTunePreview();
+  schedulePlaybackRefresh();
+});
+
+$('fxAutoTuneScale').addEventListener('change', (e) => {
+  engine.state.vocalFx.autoTuneScale = e.target.value;
+  engine._invalidateAutoTune();
+  refreshAutoTunePreview();
+  schedulePlaybackRefresh();
+});
+
+bindSlider('fxAutoTuneSpeed', (v) => {
+  engine.state.vocalFx.autoTuneSpeed = v;
+  engine._invalidateAutoTune();
+  refreshAutoTunePreview();
+  schedulePlaybackRefresh();
+});
+
+bindSlider('fxAutoTuneAmount', (v) => {
+  engine.state.vocalFx.autoTuneAmount = v;
+  engine._invalidateAutoTune();
+  refreshAutoTunePreview();
+  schedulePlaybackRefresh();
 });
 
 // Per-Module FX Toggles
@@ -1284,6 +1430,13 @@ function animationLoop() {
   const gr = meters.vocalCompGR;
   $('vocalGrBar').style.width = `${Math.min(100, (gr / 18) * 100)}%`;
   $('vocalGrVal').textContent = `-${gr.toFixed(1)} dB`;
+
+  if ($('panel-vocal-fx').classList.contains('active')) {
+    const atOn = !!(engine.state.vocal.fxEnabled && engine.state.vocalFx.autoTuneEnabled);
+    const vDur = engine.activeVocalBuffer ? engine.activeVocalBuffer.duration : 0;
+    const vPlayhead = Math.max(0, curTime - engine.state.vocal.syncOffsetMs / 1000);
+    drawAutoTuneGraph($('autoTuneCanvas'), engine.lastAutoTuneStats, vDur, vPlayhead, atOn);
+  }
 
   requestAnimationFrame(animationLoop);
 }
