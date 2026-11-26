@@ -17,10 +17,11 @@ const stripImportsExports = (src) =>
 
 const presetsJs = stripImportsExports(fs.readFileSync(path.join(root, 'js/presets.js'), 'utf8'));
 const engineJs = stripImportsExports(fs.readFileSync(path.join(root, 'js/audio-engine.js'), 'utf8'));
+const composerJs = stripImportsExports(fs.readFileSync(path.join(root, 'js/auto-composer.js'), 'utf8'));
 const visualizersJs = stripImportsExports(fs.readFileSync(path.join(root, 'js/visualizers.js'), 'utf8'));
 const appJs = stripImportsExports(fs.readFileSync(path.join(root, 'js/app.js'), 'utf8'));
 
-const combinedApp = `(() => {\n"use strict";\n${presetsJs}\n${engineJs}\n${visualizersJs}\n${appJs}\n})();`;
+const combinedApp = `(() => {\n"use strict";\n${presetsJs}\n${engineJs}\n${composerJs}\n${visualizersJs}\n${appJs}\n})();`;
 
 // Escape closing script tags if any exist inside code
 const safeScript = (code) => code.replace(/<\/script>/gi, '<\\/script>');

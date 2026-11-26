@@ -1,6 +1,7 @@
 /**
  * Nagham Studio — Complete Web Audio DSP Engine, Multi-Track Recorder,
- * Built-in Beat Synthesizer, Offline Mixer/Masterer, and Real MP3/WAV Encoder
+ * Creative Vocal FX & Harmony Engine, Precision Metronome, Built-in Beat
+ * Synthesizer, Offline Mixer/Masterer, and Real MP3/WAV Encoder
  */
 
 import { DEFAULT_MIX_STATE } from './presets.js';
@@ -29,15 +30,14 @@ export function createReverbIR(ctx, type = 'studio', decaySec = 1.6) {
   const buffer = ctx.createBuffer(2, length, sampleRate);
 
   const configs = {
-    room:      { damp: 0.45, density: 1.0, earlyCount: 10, earlySpread: 0.025, bright: 0.65 },
-    studio:    { damp: 0.35, density: 1.0, earlyCount: 14, earlySpread: 0.035, bright: 0.78 },
-    hall:      { damp: 0.25, density: 1.0, earlyCount: 18, earlySpread: 0.065, bright: 0.72 },
-    cathedral: { damp: 0.18, density: 1.0, earlyCount: 22, earlySpread: 0.095, bright: 0.62 },
-    plate:     { damp: 0.15, density: 1.2, earlyCount: 8,  earlySpread: 0.015, bright: 0.92 },
+    room:      { damp: 0.45, earlyCount: 10, earlySpread: 0.025, bright: 0.65 },
+    studio:    { damp: 0.35, earlyCount: 14, earlySpread: 0.035, bright: 0.78 },
+    hall:      { damp: 0.25, earlyCount: 18, earlySpread: 0.065, bright: 0.72 },
+    cathedral: { damp: 0.18, earlyCount: 22, earlySpread: 0.095, bright: 0.62 },
+    plate:     { damp: 0.15, earlyCount: 8,  earlySpread: 0.015, bright: 0.92 },
   };
   const cfg = configs[type] || configs.studio;
 
-  // Deterministic PRNG for consistent reverb character between live & offline renders
   let seed = 1337 + type.length * 97 + Math.round(decaySec * 100);
   const rand = () => {
     seed = (seed * 16807) % 2147483647;
@@ -51,17 +51,14 @@ export function createReverbIR(ctx, type = 'studio', decaySec = 1.6) {
 
     for (let i = 0; i < length; i++) {
       const t = i / length;
-      // Exponential tail with slight early attack bloom
       const attack = Math.min(1, i / (sampleRate * 0.008));
       const env = attack * Math.pow(1 - t, 2.2 + cfg.damp * 2.5);
       const raw = rand();
-      // Simple one-pole lowpass damping that increases over time
       const dynamicAlpha = Math.max(0.08, lpAlpha * (1 - t * 0.65));
       lpState = lpState + dynamicAlpha * (raw - lpState);
       data[i] = lpState * env * 0.55;
     }
 
-    // Add distinct early reflections for realistic room dimension
     for (let r = 0; r < cfg.earlyCount; r++) {
       const delaySec = 0.004 + (r / cfg.earlyCount) * cfg.earlySpread + (ch === 1 ? 0.0017 : 0);
       const idx = Math.floor(delaySec * sampleRate);
@@ -90,9 +87,28 @@ export function createWarmthCurve(amountPercent) {
   const norm = Math.tanh(k);
   for (let i = 0; i < n; i++) {
     const x = (i * 2) / (n - 1) - 1;
-    // Slight even-order harmonic asymmetry for warm tube character
     const shaped = (Math.tanh(k * (x + 0.04 * drive)) - Math.tanh(0.04 * drive * k)) / norm;
     curve[i] = x * (1 - drive * 0.65) + shaped * (drive * 0.65);
+  }
+  return curve;
+}
+
+/**
+ * Create a musical vocal Overdrive / Grit WaveShaper curve.
+ */
+export function createOverdriveCurve(amountPercent) {
+  const n = 2048;
+  const curve = new Float32Array(n);
+  const amt = clamp(amountPercent, 0, 100) / 100;
+  if (amt <= 0.001) {
+    for (let i = 0; i < n; i++) curve[i] = (i * 2) / (n - 1) - 1;
+    return curve;
+  }
+  const k = 2 + amt * 18;
+  const norm = Math.tanh(k);
+  for (let i = 0; i < n; i++) {
+    const x = (i * 2) / (n - 1) - 1;
+    curve[i] = Math.tanh(k * x) / norm;
   }
   return curve;
 }
@@ -122,7 +138,6 @@ export function createLimiterClipperCurve(ceilingDb) {
 
 /**
  * Non-destructive envelope-based Noise Gate for vocal buffers.
- * Reduces room noise between sung phrases smoothly without clicks.
  */
 export function applyNoiseGate(ctx, srcBuffer, thresholdDb) {
   if (!srcBuffer || thresholdDb <= -78) return srcBuffer;
@@ -133,7 +148,7 @@ export function applyNoiseGate(ctx, srcBuffer, thresholdDb) {
   const out = ctx.createBuffer(numCh, len, sr);
 
   const threshLin = dbToGain(thresholdDb);
-  const floorGain = dbToGain(-34); // Soft musical floor instead of harsh dead cut
+  const floorGain = dbToGain(-34);
   const attackCoeff = Math.exp(-1 / (sr * 0.006));
   const releaseCoeff = Math.exp(-1 / (sr * 0.11));
   const envCoeff = Math.exp(-1 / (sr * 0.012));
@@ -173,6 +188,92 @@ export function applyNoiseGate(ctx, srcBuffer, thresholdDb) {
 }
 
 /**
+ * Time-preserving WSOLA (Waveform-Similarity Overlap-Add) granular pitch shifter
+ * for creating clean, phase-coherent vocal harmonies (octave, fifth, third).
+ */
+export function createPitchShiftedHarmonyBuffer(ctx, srcBuffer, semitones = 7) {
+  if (!srcBuffer || semitones === 0) return srcBuffer;
+
+  const sr = srcBuffer.sampleRate;
+  const len = srcBuffer.length;
+  const pitchFactor = Math.pow(2, semitones / 12);
+
+  const input = srcBuffer.getChannelData(0);
+  const out = ctx.createBuffer(2, len, sr);
+  const outL = out.getChannelData(0);
+  const outR = out.getChannelData(1);
+
+  const grainSize = 2048;
+  const hop = 1024; // 2x Hann overlap sums to exact 1.0
+  const win = new Float32Array(grainSize);
+  for (let i = 0; i < grainSize; i++) {
+    win[i] = 0.5 * (1 - Math.cos((2 * Math.PI * i) / (grainSize - 1)));
+  }
+
+  const readSample = (pos) => {
+    const i0 = Math.floor(pos);
+    if (i0 < 0 || i0 + 1 >= len) return 0;
+    const frac = pos - i0;
+    return input[i0] * (1 - frac) + input[i0 + 1] * frac;
+  };
+
+  const searchRadius = Math.min(260, Math.floor(sr / 150));
+  const matchLen = 256;
+
+  for (let outStart = 0; outStart < len; outStart += hop) {
+    let bestOffset = 0;
+
+    // Phase-align new grain against already synthesized overlap tail (WSOLA)
+    if (outStart > 0) {
+      let bestScore = -Infinity;
+      const maxSearch = Math.min(searchRadius, Math.floor(len - outStart - grainSize * pitchFactor));
+      const minSearch = Math.max(-searchRadius, -outStart);
+
+      for (let d = minSearch; d <= maxSearch; d += 4) {
+        let corr = 0;
+        for (let m = 0; m < matchLen; m += 4) {
+          const dstIdx = outStart + m;
+          if (dstIdx >= len) break;
+          corr += outL[dstIdx] * readSample(outStart + d + m * pitchFactor);
+        }
+        if (corr > bestScore) {
+          bestScore = corr;
+          bestOffset = d;
+        }
+      }
+      // Fine refinement around best coarse offset
+      const refineStart = Math.max(minSearch, bestOffset - 3);
+      const refineEnd = Math.min(maxSearch, bestOffset + 3);
+      for (let d = refineStart; d <= refineEnd; d++) {
+        let corr = 0;
+        for (let m = 0; m < matchLen; m += 2) {
+          const dstIdx = outStart + m;
+          if (dstIdx >= len) break;
+          corr += outL[dstIdx] * readSample(outStart + d + m * pitchFactor);
+        }
+        if (corr > bestScore) {
+          bestScore = corr;
+          bestOffset = d;
+        }
+      }
+    }
+
+    const baseSrc = outStart + bestOffset;
+    for (let i = 0; i < grainSize; i++) {
+      const dstIdx = outStart + i;
+      if (dstIdx >= len) break;
+      const s = readSample(baseSrc + i * pitchFactor) * win[i];
+      outL[dstIdx] += s;
+      // Slight stereo Haas spread (~9 ms) on right channel for lush harmony width
+      const dstR = dstIdx + 400;
+      if (dstR < len) outR[dstR] += s;
+    }
+  }
+
+  return out;
+}
+
+/**
  * Compute a smooth ducking gain curve for the backing track based on vocal activity.
  */
 export function computeAutoDuckingCurve(vocalBuffer, duckingDb, totalDuration, syncOffsetSec = 0, stepSec = 0.05) {
@@ -202,65 +303,123 @@ export function computeAutoDuckingCurve(vocalBuffer, duckingDb, totalDuration, s
       }
     }
     const vocalDb = gainToDb(rms);
-    // Map vocal level between -42 dB and -18 dB smoothly to ducking gain
     const activity = clamp((vocalDb - (-42)) / 24, 0, 1);
     const target = 1.0 - activity * (1.0 - minGain);
-    const alpha = target < smoothGain ? 0.45 : 0.16; // Fast attack, gentle release
+    const alpha = target < smoothGain ? 0.45 : 0.16;
     smoothGain = smoothGain + alpha * (target - smoothGain);
     curve[s] = smoothGain;
   }
   return curve;
 }
 
+function getLofiFilterSpec(style) {
+  if (style === 'telephone') return { hp: 460, lp: 2600, peakFreq: 1450, peakGain: 5.5, peakQ: 1.8 };
+  if (style === 'megaphone') return { hp: 620, lp: 3800, peakFreq: 1900, peakGain: 8.5, peakQ: 2.2 };
+  return { hp: 280, lp: 3500, peakFreq: 1150, peakGain: 3.5, peakQ: 1.2 }; // vintage radio
+}
+
 /**
  * Build the complete Vocal FX Audio Graph inside either live AudioContext or OfflineAudioContext.
+ * Supports per-module bypass toggles and all creative vocal effects.
  */
 export function buildVocalFxChain(ctx, state, reverbIR) {
   const fx = state.vocalFx;
   const input = ctx.createGain();
+  const eqOn = fx.eqEnabled !== false;
 
   // 1. High-Pass Filter
   const hpf = ctx.createBiquadFilter();
   hpf.type = 'highpass';
-  hpf.frequency.value = fx.hpfFreq;
+  hpf.frequency.value = eqOn ? fx.hpfFreq : 20;
   hpf.Q.value = 0.707;
 
   // 2. 4-Band Vocal EQ
   const eqLow = ctx.createBiquadFilter();
   eqLow.type = 'lowshelf';
   eqLow.frequency.value = 100;
-  eqLow.gain.value = fx.eqLow;
+  eqLow.gain.value = eqOn ? fx.eqLow : 0;
 
   const eqWarmth = ctx.createBiquadFilter();
   eqWarmth.type = 'peaking';
   eqWarmth.frequency.value = 380;
   eqWarmth.Q.value = 1.0;
-  eqWarmth.gain.value = fx.eqWarmth;
+  eqWarmth.gain.value = eqOn ? fx.eqWarmth : 0;
 
   const eqPresence = ctx.createBiquadFilter();
   eqPresence.type = 'peaking';
   eqPresence.frequency.value = 3200;
   eqPresence.Q.value = 1.2;
-  eqPresence.gain.value = fx.eqPresence;
+  eqPresence.gain.value = eqOn ? fx.eqPresence : 0;
 
   const eqAir = ctx.createBiquadFilter();
   eqAir.type = 'highshelf';
   eqAir.frequency.value = 10000;
-  eqAir.gain.value = fx.eqAir;
+  eqAir.gain.value = eqOn ? fx.eqAir : 0;
 
-  // 3. De-Esser (targeted sibilance attenuation at 6.8 kHz)
+  // 3. De-Esser
   const deEsser = ctx.createBiquadFilter();
   deEsser.type = 'peaking';
   deEsser.frequency.value = 6800;
   deEsser.Q.value = 2.8;
-  deEsser.gain.value = -(fx.deEsser / 100) * 11;
+  deEsser.gain.value = eqOn ? -(fx.deEsser / 100) * 11 : 0;
 
   // 4. Analog Tube Warmth
   const warmth = ctx.createWaveShaper();
-  warmth.curve = createWarmthCurve(fx.warmth);
+  warmth.curve = createWarmthCurve(eqOn ? fx.warmth : 0);
   warmth.oversample = '4x';
 
-  // 5. Compressor + Makeup Gain
+  // 5. Vocal Drive / Overdrive (with bypassable blend)
+  const driveShaper = ctx.createWaveShaper();
+  driveShaper.curve = createOverdriveCurve(fx.driveAmount || 0);
+  driveShaper.oversample = '4x';
+  const driveTone = ctx.createBiquadFilter();
+  driveTone.type = 'lowpass';
+  driveTone.frequency.value = 5400;
+  const driveWet = ctx.createGain();
+  const driveDry = ctx.createGain();
+  const driveSum = ctx.createGain();
+  const driveAmt = fx.driveEnabled ? clamp((fx.driveAmount || 0) / 100, 0, 1) * 0.72 : 0;
+  driveWet.gain.value = driveAmt;
+  driveDry.gain.value = 1 - driveAmt * 0.55;
+
+  warmth.connect(driveDry);
+  driveDry.connect(driveSum);
+  warmth.connect(driveShaper);
+  driveShaper.connect(driveTone);
+  driveTone.connect(driveWet);
+  driveWet.connect(driveSum);
+
+  // 6. Lo-Fi / Telephone / Radio / Megaphone Filter (parallel wet/dry)
+  const lofiSpec = getLofiFilterSpec(fx.lofiStyle);
+  const lofiHp = ctx.createBiquadFilter();
+  lofiHp.type = 'highpass';
+  lofiHp.frequency.value = lofiSpec.hp;
+  const lofiLp = ctx.createBiquadFilter();
+  lofiLp.type = 'lowpass';
+  lofiLp.frequency.value = lofiSpec.lp;
+  const lofiPeak = ctx.createBiquadFilter();
+  lofiPeak.type = 'peaking';
+  lofiPeak.frequency.value = lofiSpec.peakFreq;
+  lofiPeak.Q.value = lofiSpec.peakQ;
+  lofiPeak.gain.value = lofiSpec.peakGain;
+
+  const lofiDry = ctx.createGain();
+  const lofiWet = ctx.createGain();
+  const lofiSum = ctx.createGain();
+  const lofiRatio = fx.lofiEnabled ? clamp((fx.lofiMix || 0) / 100, 0, 1) : 0;
+  lofiWet.gain.value = lofiRatio;
+  lofiDry.gain.value = 1 - lofiRatio;
+
+  driveSum.connect(lofiDry);
+  lofiDry.connect(lofiSum);
+  driveSum.connect(lofiHp);
+  lofiHp.connect(lofiLp);
+  lofiLp.connect(lofiPeak);
+  lofiPeak.connect(lofiWet);
+  lofiWet.connect(lofiSum);
+
+  // 7. Compressor + Makeup Gain (with per-module toggle)
+  const compOn = fx.compEnabled !== false;
   const comp = ctx.createDynamicsCompressor();
   comp.threshold.value = fx.compThreshold;
   comp.knee.value = 8;
@@ -271,7 +430,13 @@ export function buildVocalFxChain(ctx, state, reverbIR) {
   const compMakeup = ctx.createGain();
   compMakeup.gain.value = dbToGain(fx.compMakeup);
 
-  // Connect serial vocal strip
+  const compActiveGain = ctx.createGain();
+  const compBypassGain = ctx.createGain();
+  const postComp = ctx.createGain();
+  compActiveGain.gain.value = compOn ? 1 : 0;
+  compBypassGain.gain.value = compOn ? 0 : 1;
+
+  // Wire serial vocal strip
   input.connect(hpf);
   hpf.connect(eqLow);
   eqLow.connect(eqWarmth);
@@ -279,17 +444,69 @@ export function buildVocalFxChain(ctx, state, reverbIR) {
   eqPresence.connect(eqAir);
   eqAir.connect(deEsser);
   deEsser.connect(warmth);
-  warmth.connect(comp);
+
+  lofiSum.connect(comp);
   comp.connect(compMakeup);
+  compMakeup.connect(compActiveGain);
+  compActiveGain.connect(postComp);
+  lofiSum.connect(compBypassGain);
+  compBypassGain.connect(postComp);
+
+  // 8. Flanger / Phaser Modulation FX (parallel wet/dry)
+  const modLfo = ctx.createOscillator();
+  modLfo.type = 'sine';
+  modLfo.frequency.value = fx.modRate || 0.6;
+
+  // Flanger branch
+  const flangerDelay = ctx.createDelay(0.05);
+  flangerDelay.delayTime.value = 0.006;
+  const flangerDepth = ctx.createGain();
+  flangerDepth.gain.value = ((fx.modDepth || 40) / 100) * 0.0045;
+  const flangerFb = ctx.createGain();
+  flangerFb.gain.value = 0.35;
+  const flangerWet = ctx.createGain();
+
+  modLfo.connect(flangerDepth);
+  flangerDepth.connect(flangerDelay.delayTime);
+  postComp.connect(flangerDelay);
+  flangerDelay.connect(flangerFb);
+  flangerFb.connect(flangerDelay);
+  flangerDelay.connect(flangerWet);
+
+  // Phaser branch (3 cascaded Allpass filters swept by LFO)
+  const phaserAp1 = ctx.createBiquadFilter(); phaserAp1.type = 'allpass'; phaserAp1.frequency.value = 900; phaserAp1.Q.value = 1.6;
+  const phaserAp2 = ctx.createBiquadFilter(); phaserAp2.type = 'allpass'; phaserAp2.frequency.value = 1600; phaserAp2.Q.value = 1.6;
+  const phaserAp3 = ctx.createBiquadFilter(); phaserAp3.type = 'allpass'; phaserAp3.frequency.value = 2600; phaserAp3.Q.value = 1.6;
+  const phaserDepth = ctx.createGain();
+  phaserDepth.gain.value = ((fx.modDepth || 40) / 100) * 700;
+  const phaserWet = ctx.createGain();
+
+  modLfo.connect(phaserDepth);
+  phaserDepth.connect(phaserAp1.frequency);
+  phaserDepth.connect(phaserAp2.frequency);
+  phaserDepth.connect(phaserAp3.frequency);
+
+  postComp.connect(phaserAp1);
+  phaserAp1.connect(phaserAp2);
+  phaserAp2.connect(phaserAp3);
+  phaserAp3.connect(phaserWet);
+
+  modLfo.start(0);
+
+  const modMixRatio = fx.modEnabled ? clamp((fx.modMix || 0) / 100, 0, 1) * 0.72 : 0;
+  flangerWet.gain.value = fx.modType === 'flanger' ? modMixRatio : 0;
+  phaserWet.gain.value = fx.modType === 'phaser' ? modMixRatio : 0;
 
   // Post-dynamics bus (Dry + Parallel FX)
   const fxSum = ctx.createGain();
   const dryGain = ctx.createGain();
   dryGain.gain.value = 1.0;
-  compMakeup.connect(dryGain);
+  postComp.connect(dryGain);
   dryGain.connect(fxSum);
+  flangerWet.connect(fxSum);
+  phaserWet.connect(fxSum);
 
-  // 6. Stereo Doubler / Chorus (subtle L/R modulated Haas width)
+  // 9. Stereo Doubler / Chorus
   const doublerWet = ctx.createGain();
   doublerWet.gain.value = (fx.doublerMix / 100) * 0.45;
   const dblDelayL = ctx.createDelay(0.1);
@@ -317,28 +534,30 @@ export function buildVocalFxChain(ctx, state, reverbIR) {
   dblPanL.pan.value = -0.82;
   dblPanR.pan.value = 0.82;
 
-  compMakeup.connect(dblDelayL);
-  compMakeup.connect(dblDelayR);
+  postComp.connect(dblDelayL);
+  postComp.connect(dblDelayR);
   dblDelayL.connect(dblPanL);
   dblDelayR.connect(dblPanR);
   dblPanL.connect(doublerWet);
   dblPanR.connect(doublerWet);
   doublerWet.connect(fxSum);
 
-  // 7. Convolution Reverb Send
+  // 10. Convolution Reverb Send (with toggle)
+  const revOn = fx.reverbEnabled !== false;
   const revPreDelay = ctx.createDelay(0.25);
   revPreDelay.delayTime.value = fx.reverbPreDelay / 1000;
   const convolver = ctx.createConvolver();
   convolver.buffer = reverbIR || createReverbIR(ctx, fx.reverbType, fx.reverbDecay);
   const revWet = ctx.createGain();
-  revWet.gain.value = (fx.reverbMix / 100) * 0.95;
+  revWet.gain.value = revOn ? (fx.reverbMix / 100) * 0.95 : 0;
 
-  compMakeup.connect(revPreDelay);
+  postComp.connect(revPreDelay);
   revPreDelay.connect(convolver);
   convolver.connect(revWet);
   revWet.connect(fxSum);
 
-  // 8. Stereo Warm Delay Send
+  // 11. Stereo Warm Delay Send (with toggle)
+  const delOn = fx.delayEnabled !== false;
   const delayNode = ctx.createDelay(1.2);
   delayNode.delayTime.value = fx.delayTimeMs / 1000;
   const delayTone = ctx.createBiquadFilter();
@@ -347,16 +566,22 @@ export function buildVocalFxChain(ctx, state, reverbIR) {
   const delayFeedback = ctx.createGain();
   delayFeedback.gain.value = clamp(fx.delayFeedback / 100, 0, 0.78);
   const delayWet = ctx.createGain();
-  delayWet.gain.value = (fx.delayMix / 100) * 0.75;
+  delayWet.gain.value = delOn ? (fx.delayMix / 100) * 0.75 : 0;
 
-  compMakeup.connect(delayNode);
+  postComp.connect(delayNode);
   delayNode.connect(delayTone);
   delayTone.connect(delayFeedback);
   delayFeedback.connect(delayNode);
   delayTone.connect(delayWet);
   delayWet.connect(fxSum);
 
-  // Bypass switching node
+  // Optional Harmony Input (feeds into Reverb + fxSum for cohesive choir blend)
+  const harmonyInput = ctx.createGain();
+  harmonyInput.gain.value = fx.harmonyEnabled ? clamp((fx.harmonyMix || 0) / 100, 0, 1) * 0.85 : 0;
+  harmonyInput.connect(fxSum);
+  harmonyInput.connect(revPreDelay);
+
+  // Master Vocal FX Bypass switching node
   const bypassGain = ctx.createGain();
   const activeGain = ctx.createGain();
   const output = ctx.createGain();
@@ -372,16 +597,22 @@ export function buildVocalFxChain(ctx, state, reverbIR) {
 
   return {
     input,
+    harmonyInput,
     output,
     nodes: {
       hpf, eqLow, eqWarmth, eqPresence, eqAir, deEsser, warmth,
-      comp, compMakeup, doublerWet, revPreDelay, convolver, revWet,
+      driveShaper, driveWet, driveDry,
+      lofiHp, lofiLp, lofiPeak, lofiWet, lofiDry,
+      comp, compMakeup, compActiveGain, compBypassGain,
+      modLfo, flangerDepth, flangerWet, phaserDepth, phaserWet,
+      doublerWet, revPreDelay, convolver, revWet,
       delayNode, delayTone, delayFeedback, delayWet,
-      activeGain, bypassGain, dblLfoL, dblLfoR,
+      harmonyInput, activeGain, bypassGain, dblLfoL, dblLfoR,
     },
     stopOscillators() {
       try { dblLfoL.stop(); } catch {}
       try { dblLfoR.stop(); } catch {}
+      try { modLfo.stop(); } catch {}
     },
   };
 }
@@ -394,7 +625,6 @@ export function buildMasterChain(ctx, state) {
   const m = state.master;
   const input = ctx.createGain();
 
-  // 1. Master 3-Band EQ
   const eqLow = ctx.createBiquadFilter();
   eqLow.type = 'lowshelf';
   eqLow.frequency.value = 80;
@@ -411,22 +641,19 @@ export function buildMasterChain(ctx, state) {
   eqHigh.frequency.value = 11000;
   eqHigh.gain.value = m.eqHigh;
 
-  // 2. True Mid/Side Stereo Widener
+  // True Mid/Side Stereo Widener
   const splitter = ctx.createChannelSplitter(2);
   const merger = ctx.createChannelMerger(2);
 
-  // Mid = 0.5*L + 0.5*R
   const midL = ctx.createGain(); midL.gain.value = 0.5;
   const midR = ctx.createGain(); midR.gain.value = 0.5;
   const midBus = ctx.createGain();
 
-  // Side = 0.5*L - 0.5*R
   const sideL = ctx.createGain(); sideL.gain.value = 0.5;
   const sideR = ctx.createGain(); sideR.gain.value = -0.5;
   const sideWidthGain = ctx.createGain();
   sideWidthGain.gain.value = m.stereoWidth / 100;
 
-  // Decode: OutL = Mid + Side, OutR = Mid - Side
   const sideInv = ctx.createGain();
   sideInv.gain.value = -1;
 
@@ -446,7 +673,7 @@ export function buildMasterChain(ctx, state) {
   midBus.connect(merger, 0, 1);
   sideInv.connect(merger, 0, 1);
 
-  // 3. Glue Bus Compressor
+  // Glue Bus Compressor
   const glueRatio = 1 + (m.glueAmount / 100) * 2.5;
   const glueThresh = -(m.glueAmount / 100) * 18;
   const glueComp = ctx.createDynamicsCompressor();
@@ -459,7 +686,7 @@ export function buildMasterChain(ctx, state) {
   const glueMakeup = ctx.createGain();
   glueMakeup.gain.value = dbToGain((m.glueAmount / 100) * 2.2);
 
-  // 4. Maximizer / Brickwall Limiter
+  // Maximizer / Brickwall Limiter
   const limiterDrive = ctx.createGain();
   limiterDrive.gain.value = dbToGain(m.limiterDrive);
 
@@ -474,7 +701,6 @@ export function buildMasterChain(ctx, state) {
   limiterClipper.curve = createLimiterClipperCurve(m.limiterCeiling);
   limiterClipper.oversample = '4x';
 
-  // Wire Mastering Chain
   input.connect(eqLow);
   eqLow.connect(eqMid);
   eqMid.connect(eqHigh);
@@ -485,7 +711,6 @@ export function buildMasterChain(ctx, state) {
   limiterDrive.connect(limiterComp);
   limiterComp.connect(limiterClipper);
 
-  // Master Bypass & Master Volume
   const activeGain = ctx.createGain();
   const bypassGain = ctx.createGain();
   const masterVol = ctx.createGain();
@@ -512,7 +737,6 @@ export function buildMasterChain(ctx, state) {
 
 /**
  * Encode a Stereo AudioBuffer into a genuine MP3 Blob using lamejs.
- * Processes asynchronously in chunks to keep the browser UI responsive.
  */
 export async function encodeAudioBufferToMp3(audioBuffer, bitrateKbps = 192, onProgress = null) {
   const lame = window.lamejs;
@@ -593,7 +817,7 @@ export function encodeAudioBufferToWav(audioBuffer) {
   writeStr(8, 'WAVE');
   writeStr(12, 'fmt ');
   view.setUint32(16, 16, true);
-  view.setUint16(20, 1, true); // PCM
+  view.setUint16(20, 1, true);
   view.setUint16(22, numChannels, true);
   view.setUint32(24, sampleRate, true);
   view.setUint32(28, sampleRate * numChannels * bytesPerSample, true);
@@ -620,9 +844,6 @@ export function encodeAudioBufferToWav(audioBuffer) {
   return new Blob([buffer], { type: 'audio/wav' });
 }
 
-/**
- * Normalize an AudioBuffer in place to a target peak dBFS (e.g. -0.5 dB).
- */
 export function normalizeBuffer(audioBuffer, targetPeakDb = -0.5) {
   let maxPeak = 0;
   for (let ch = 0; ch < audioBuffer.numberOfChannels; ch++) {
@@ -642,9 +863,6 @@ export function normalizeBuffer(audioBuffer, targetPeakDb = -0.5) {
   }
 }
 
-/**
- * Analyze peak dBFS and approximate integrated loudness (LUFS proxy) of a rendered buffer.
- */
 export function analyzeLoudness(audioBuffer) {
   let peak = 0;
   let sumSq = 0;
@@ -667,8 +885,7 @@ export function analyzeLoudness(audioBuffer) {
 }
 
 /**
- * Synthesize a musical built-in backing track AudioBuffer so users can record
- * and test mixing immediately even without uploading an external MP3.
+ * Synthesize a musical built-in backing track AudioBuffer.
  */
 export async function synthesizeDemoBeat(beatId = 'oriental_groove') {
   const sr = 44100;
@@ -696,10 +913,8 @@ export async function synthesizeDemoBeat(beatId = 'oriental_groove') {
     osc.frequency.exponentialRampToValueAtTime(42, time + 0.14);
     g.gain.setValueAtTime(punch, time);
     g.gain.exponentialRampToValueAtTime(0.001, time + 0.28);
-    osc.connect(g);
-    g.connect(master);
-    osc.start(time);
-    osc.stop(time + 0.3);
+    osc.connect(g); g.connect(master);
+    osc.start(time); osc.stop(time + 0.3);
   };
 
   const playPerc = (time, freq = 950, decay = 0.09, gainVal = 0.25) => {
@@ -717,50 +932,31 @@ export async function synthesizeDemoBeat(beatId = 'oriental_groove') {
     bp.Q.value = 1.6;
     const g = off.createGain();
     g.gain.value = gainVal;
-    src.connect(bp);
-    bp.connect(g);
-    g.connect(master);
-    g.connect(revSend);
+    src.connect(bp); bp.connect(g); g.connect(master); g.connect(revSend);
     src.start(time);
   };
 
   const playPluck = (time, midi, dur = 0.65, vol = 0.22, panVal = 0) => {
     const osc1 = off.createOscillator();
     const osc2 = off.createOscillator();
-    osc1.type = 'triangle';
-    osc2.type = 'sawtooth';
+    osc1.type = 'triangle'; osc2.type = 'sawtooth';
     const f = midiToFreq(midi);
     osc1.frequency.setValueAtTime(f, time);
     osc2.frequency.setValueAtTime(f * 2, time);
-
     const lp = off.createBiquadFilter();
     lp.type = 'lowpass';
     lp.frequency.setValueAtTime(2800, time);
     lp.frequency.exponentialRampToValueAtTime(520, time + dur);
-
     const g = off.createGain();
     g.gain.setValueAtTime(0.001, time);
     g.gain.linearRampToValueAtTime(vol, time + 0.012);
     g.gain.exponentialRampToValueAtTime(0.001, time + dur);
-
-    const pan = off.createStereoPanner();
-    pan.pan.value = panVal;
-
-    const mix2 = off.createGain();
-    mix2.gain.value = 0.28;
-
-    osc1.connect(lp);
-    osc2.connect(mix2);
-    mix2.connect(lp);
-    lp.connect(g);
-    g.connect(pan);
-    pan.connect(master);
-    pan.connect(revSend);
-
-    osc1.start(time);
-    osc2.start(time);
-    osc1.stop(time + dur + 0.05);
-    osc2.stop(time + dur + 0.05);
+    const pan = off.createStereoPanner(); pan.pan.value = panVal;
+    const mix2 = off.createGain(); mix2.gain.value = 0.28;
+    osc1.connect(lp); osc2.connect(mix2); mix2.connect(lp);
+    lp.connect(g); g.connect(pan); pan.connect(master); pan.connect(revSend);
+    osc1.start(time); osc2.start(time);
+    osc1.stop(time + dur + 0.05); osc2.stop(time + dur + 0.05);
   };
 
   const playPadChord = (time, midis, dur, vol = 0.14) => {
@@ -768,10 +964,9 @@ export async function synthesizeDemoBeat(beatId = 'oriental_groove') {
       const osc = off.createOscillator();
       osc.type = 'triangle';
       osc.frequency.setValueAtTime(midiToFreq(m), time);
-      osc.detune.value = (idx % 2 === 0 ? -5 : 5);
+      osc.detune.value = idx % 2 === 0 ? -5 : 5;
       const lp = off.createBiquadFilter();
-      lp.type = 'lowpass';
-      lp.frequency.value = 1400;
+      lp.type = 'lowpass'; lp.frequency.value = 1400;
       const g = off.createGain();
       g.gain.setValueAtTime(0.001, time);
       g.gain.linearRampToValueAtTime(vol / midis.length, time + 0.18);
@@ -779,49 +974,34 @@ export async function synthesizeDemoBeat(beatId = 'oriental_groove') {
       g.gain.exponentialRampToValueAtTime(0.001, time + dur);
       const pan = off.createStereoPanner();
       pan.pan.value = (idx - (midis.length - 1) / 2) * 0.28;
-      osc.connect(lp);
-      lp.connect(g);
-      g.connect(pan);
-      pan.connect(master);
-      pan.connect(revSend);
-      osc.start(time);
-      osc.stop(time + dur + 0.05);
+      osc.connect(lp); lp.connect(g); g.connect(pan); pan.connect(master); pan.connect(revSend);
+      osc.start(time); osc.stop(time + dur + 0.05);
     });
   };
 
   const playBass = (time, midi, dur, vol = 0.34) => {
     const osc = off.createOscillator();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(midiToFreq(midi), time);
+    osc.type = 'sine'; osc.frequency.setValueAtTime(midiToFreq(midi), time);
     const oscSub = off.createOscillator();
-    oscSub.type = 'triangle';
-    oscSub.frequency.setValueAtTime(midiToFreq(midi), time);
-    const subLp = off.createBiquadFilter();
-    subLp.type = 'lowpass';
-    subLp.frequency.value = 320;
+    oscSub.type = 'triangle'; oscSub.frequency.setValueAtTime(midiToFreq(midi), time);
+    const subLp = off.createBiquadFilter(); subLp.type = 'lowpass'; subLp.frequency.value = 320;
     const g = off.createGain();
     g.gain.setValueAtTime(0.001, time);
     g.gain.linearRampToValueAtTime(vol, time + 0.02);
     g.gain.exponentialRampToValueAtTime(0.001, time + dur);
-    osc.connect(g);
-    oscSub.connect(subLp);
-    subLp.connect(g);
-    g.connect(master);
-    osc.start(time);
-    oscSub.start(time);
-    osc.stop(time + dur + 0.04);
-    oscSub.stop(time + dur + 0.04);
+    osc.connect(g); oscSub.connect(subLp); subLp.connect(g); g.connect(master);
+    osc.start(time); oscSub.start(time);
+    osc.stop(time + dur + 0.04); oscSub.stop(time + dur + 0.04);
   };
 
   if (beatId === 'oriental_groove') {
-    // 96 BPM Maqam Hijaz (D - Eb - F# - G - A - Bb - C - D)
     const bpm = 96;
-    const step = 60 / bpm / 2; // eighth note
+    const step = 60 / bpm / 2;
     const chords = [
-      { bass: 38, pad: [50, 54, 57, 62], arp: [62, 66, 67, 69, 67, 66, 63, 62] }, // D Hijaz
-      { bass: 39, pad: [51, 55, 58, 63], arp: [63, 67, 70, 67, 66, 63, 62, 57] }, // Eb Maj
-      { bass: 43, pad: [55, 58, 62, 67], arp: [67, 69, 70, 69, 67, 66, 63, 62] }, // Gm
-      { bass: 38, pad: [50, 54, 57, 62], arp: [62, 63, 66, 69, 66, 63, 62, 57] }, // D
+      { bass: 38, pad: [50, 54, 57, 62], arp: [62, 66, 67, 69, 67, 66, 63, 62] },
+      { bass: 39, pad: [51, 55, 58, 63], arp: [63, 67, 70, 67, 66, 63, 62, 57] },
+      { bass: 43, pad: [55, 58, 62, 67], arp: [67, 69, 70, 69, 67, 66, 63, 62] },
+      { bass: 38, pad: [50, 54, 57, 62], arp: [62, 63, 66, 69, 66, 63, 62, 57] },
     ];
     let bar = 0;
     for (let t = 0; t < duration - 0.5; t += step * 8) {
@@ -829,15 +1009,12 @@ export async function synthesizeDemoBeat(beatId = 'oriental_groove') {
       playPadChord(t, c.pad, step * 8, 0.24);
       playBass(t, c.bass, step * 3.5, 0.36);
       playBass(t + step * 4, c.bass, step * 3.5, 0.30);
-
-      // Maqsum-inspired Darbuka rhythm (Doum - Tek - - Tek - Doum - Tek -)
       playKick(t, 0.85);
       playPerc(t + step * 1, 2200, 0.07, 0.24);
       playPerc(t + step * 3, 2400, 0.08, 0.22);
       playKick(t + step * 4, 0.78);
       playPerc(t + step * 6, 2100, 0.08, 0.26);
       playPerc(t + step * 7, 5200, 0.04, 0.14);
-
       c.arp.forEach((note, i) => {
         if (t + i * step < duration - 0.2) {
           playPluck(t + i * step, note, step * 1.9, 0.18, i % 2 === 0 ? -0.35 : 0.35);
@@ -849,10 +1026,10 @@ export async function synthesizeDemoBeat(beatId = 'oriental_groove') {
     const bpm = 82;
     const step = 60 / bpm / 2;
     const prog = [
-      { bass: 45, pad: [57, 60, 64, 67] }, // Am7
-      { bass: 41, pad: [53, 57, 60, 64] }, // Fmaj7
-      { bass: 48, pad: [55, 60, 64, 67] }, // Cmaj7
-      { bass: 43, pad: [55, 59, 62, 67] }, // G6
+      { bass: 45, pad: [57, 60, 64, 67] },
+      { bass: 41, pad: [53, 57, 60, 64] },
+      { bass: 48, pad: [55, 60, 64, 67] },
+      { bass: 43, pad: [55, 59, 62, 67] },
     ];
     let bar = 0;
     for (let t = 0; t < duration - 0.5; t += step * 8) {
@@ -869,14 +1046,13 @@ export async function synthesizeDemoBeat(beatId = 'oriental_groove') {
       bar++;
     }
   } else {
-    // pop_ballad 108 BPM C minor
     const bpm = 108;
     const step = 60 / bpm / 2;
     const prog = [
-      { bass: 36, pad: [48, 55, 60, 63], arp: [60, 63, 67, 72] }, // Cm
-      { bass: 44, pad: [56, 60, 63, 68], arp: [63, 68, 72, 68] }, // Ab
-      { bass: 39, pad: [51, 55, 58, 63], arp: [58, 63, 67, 70] }, // Eb
-      { bass: 46, pad: [53, 58, 62, 65], arp: [58, 62, 65, 70] }, // Bb
+      { bass: 36, pad: [48, 55, 60, 63], arp: [60, 63, 67, 72] },
+      { bass: 44, pad: [56, 60, 63, 68], arp: [63, 68, 72, 68] },
+      { bass: 39, pad: [51, 55, 58, 63], arp: [58, 63, 67, 70] },
+      { bass: 46, pad: [53, 58, 62, 65], arp: [58, 62, 65, 70] },
     ];
     let bar = 0;
     for (let t = 0; t < duration - 0.5; t += step * 8) {
@@ -901,7 +1077,7 @@ export async function synthesizeDemoBeat(beatId = 'oriental_groove') {
 
 /**
  * Main Studio Audio Engine managing live playback, recording, real-time FX,
- * metering, and offline MP3/WAV mixdown.
+ * precision metronome, harmony generation, metering, and offline MP3/WAV mixdown.
  */
 export class StudioAudioEngine {
   constructor() {
@@ -911,11 +1087,14 @@ export class StudioAudioEngine {
     // Loaded audio buffers
     this.backingBuffer = null;
     this.backingName = '';
-    this.vocalTakes = [];       // { id, name, buffer, createdAt }
+    this.vocalTakes = [];
     this.activeTakeIndex = -1;
     this.gatedVocalBuffer = null;
     this._lastGateThresh = null;
     this._lastGatedTakeId = null;
+
+    // Cached pitch-shifted harmony buffer
+    this._harmonyCache = { key: '', buffer: null };
 
     // Transport state
     this.isPlaying = false;
@@ -923,6 +1102,12 @@ export class StudioAudioEngine {
     this.playheadSec = 0;
     this.playStartCtxTime = 0;
     this.playStartOffsetSec = 0;
+
+    // Precision Metronome Scheduler
+    this._metroTimer = null;
+    this._metroNextBeatTime = 0;
+    this._metroBeatIndex = 0;
+    this.onMetronomeBeat = null; // (beatIndex, beatsPerBar) => void
 
     // Live graph references
     this._activeSources = [];
@@ -949,7 +1134,7 @@ export class StudioAudioEngine {
     this.liveMonitoring = false;
     this.recordPeakHistory = [];
 
-    // EQ preview filter nodes for frequency response plotting
+    // EQ preview probe
     this._eqProbeCtx = null;
     this._eqProbeNodes = null;
   }
@@ -990,25 +1175,121 @@ export class StudioAudioEngine {
     return this.playheadSec;
   }
 
+  // =========================================================================
+  // Precision Live Metronome (Independent / Synchronized, Instantly Muteable)
+  // =========================================================================
+  setMetronomeEnabled(enabled) {
+    this.state.metronome.enabled = !!enabled;
+    if (this.state.metronome.enabled) {
+      this._startMetronomeScheduler();
+    } else {
+      this._stopMetronomeScheduler();
+    }
+  }
+
+  setMetronomeBpm(bpm) {
+    this.state.metronome.bpm = clamp(Math.round(bpm), 50, 180);
+  }
+
+  setMetronomeBeatsPerBar(beats) {
+    this.state.metronome.beatsPerBar = [3, 4, 6].includes(beats) ? beats : 4;
+    this._metroBeatIndex = 0;
+  }
+
+  setMetronomeVolume(vol) {
+    this.state.metronome.volume = clamp(vol, 0, 1);
+  }
+
+  _startMetronomeScheduler(alignTime = null) {
+    const ctx = this.ensureContext();
+    this._stopMetronomeScheduler();
+    this._metroBeatIndex = 0;
+    this._metroNextBeatTime = alignTime !== null ? alignTime : ctx.currentTime + 0.04;
+
+    const scheduleAhead = 0.12;
+    this._metroTimer = setInterval(() => {
+      if (!this.state.metronome.enabled || !this.ctx) return;
+      const now = this.ctx.currentTime;
+      while (this._metroNextBeatTime < now + scheduleAhead) {
+        const beat = this._metroBeatIndex;
+        const beatsPerBar = this.state.metronome.beatsPerBar;
+        const when = this._metroNextBeatTime;
+        this._scheduleMetronomeClick(when, beat === 0);
+
+        if (this.onMetronomeBeat) {
+          const delayMs = Math.max(0, (when - now) * 1000);
+          setTimeout(() => {
+            if (this.state.metronome.enabled && this.onMetronomeBeat) {
+              this.onMetronomeBeat(beat, beatsPerBar);
+            }
+          }, delayMs);
+        }
+
+        const beatDur = 60 / clamp(this.state.metronome.bpm, 50, 180);
+        this._metroNextBeatTime += beatDur;
+        this._metroBeatIndex = (this._metroBeatIndex + 1) % beatsPerBar;
+      }
+    }, 25);
+  }
+
+  _stopMetronomeScheduler() {
+    if (this._metroTimer) {
+      clearInterval(this._metroTimer);
+      this._metroTimer = null;
+    }
+  }
+
+  _scheduleMetronomeClick(time, accent = false) {
+    if (!this.ctx) return;
+    const vol = clamp(this.state.metronome.volume, 0, 1) * (accent ? 0.42 : 0.28);
+    if (vol <= 0.001) return;
+
+    const osc = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(accent ? 1380 : 920, time);
+    osc.frequency.exponentialRampToValueAtTime(accent ? 680 : 480, time + 0.032);
+    g.gain.setValueAtTime(vol, time);
+    g.gain.exponentialRampToValueAtTime(0.0008, time + 0.045);
+    osc.connect(g);
+    g.connect(this.ctx.destination);
+    osc.start(time);
+    osc.stop(time + 0.05);
+  }
+
+  playMetronomeClick(accent = false) {
+    const ctx = this.ensureContext();
+    this._scheduleMetronomeClick(ctx.currentTime + 0.005, accent);
+  }
+
+  // =========================================================================
+  // Track Loading & Buffer Management
+  // =========================================================================
+  setBackingBuffer(buffer, name) {
+    this.backingBuffer = buffer;
+    this.backingName = name || 'موسيقى مؤلَّفة';
+    this.state.backing.muted = false;
+    this.stop(true);
+    return buffer;
+  }
+
+  clearBackingTrack() {
+    this.backingBuffer = null;
+    this.backingName = '';
+    this.stop(true);
+  }
+
   async loadBackingFile(file) {
     const ctx = this.ensureContext();
     const arrayBuffer = await file.arrayBuffer();
     const decoded = await ctx.decodeAudioData(arrayBuffer);
-    this.backingBuffer = decoded;
-    this.backingName = file.name;
-    this.stop();
-    this.playheadSec = 0;
-    return decoded;
+    return this.setBackingBuffer(decoded, file.name);
   }
 
   async loadDemoBeat(beatId, beatName) {
     this.ensureContext();
     const buffer = await synthesizeDemoBeat(beatId);
-    this.backingBuffer = buffer;
-    this.backingName = beatName;
-    this.stop();
-    this.playheadSec = 0;
-    return buffer;
+    return this.setBackingBuffer(buffer, beatName);
   }
 
   async loadVocalFile(file) {
@@ -1056,6 +1337,7 @@ export class StudioAudioEngine {
     this.gatedVocalBuffer = null;
     this._lastGateThresh = null;
     this._lastGatedTakeId = null;
+    this._harmonyCache = { key: '', buffer: null };
   }
 
   _getProcessedVocalBuffer(ctx) {
@@ -1075,6 +1357,21 @@ export class StudioAudioEngine {
       this._lastGatedTakeId = takeId;
     }
     return processed;
+  }
+
+  _getHarmonyBuffer(ctx, vocalBuf) {
+    if (!vocalBuf || !this.state.vocal.fxEnabled || !this.state.vocalFx.harmonyEnabled) return null;
+    const semi = Number(this.state.vocalFx.harmonyInterval) || 7;
+    const takeId = this.vocalTakes[this.activeTakeIndex]?.id || 'v';
+    const key = `${ctx.sampleRate}_${takeId}_${semi}_${this.state.vocalFx.gateThreshold}`;
+    if (ctx === this.ctx && this._harmonyCache.key === key && this._harmonyCache.buffer) {
+      return this._harmonyCache.buffer;
+    }
+    const buf = createPitchShiftedHarmonyBuffer(ctx, vocalBuf, semi);
+    if (ctx === this.ctx) {
+      this._harmonyCache = { key, buffer: buf };
+    }
+    return buf;
   }
 
   _getReverbIR(ctx) {
@@ -1119,7 +1416,12 @@ export class StudioAudioEngine {
     this.playStartOffsetSec = offset;
     this.isPlaying = true;
 
-    // Build Master Bus + Stereo Analysers
+    // Align live metronome to playback start if enabled
+    if (this.state.metronome.enabled) {
+      this._startMetronomeScheduler(now);
+    }
+
+    // Master Bus + Analysers
     this._masterChain = buildMasterChain(ctx, this.state);
 
     const meterSplit = ctx.createChannelSplitter(2);
@@ -1150,7 +1452,6 @@ export class StudioAudioEngine {
       this._backingDuckGain = ctx.createGain();
       this._backingDuckGain.gain.value = 1.0;
 
-      // Apply smooth Auto-Ducking curve if vocal track exists & is active
       if (this.activeVocalBuffer && vocalGain > 0 && this.state.vocal.duckingDb > 0.05) {
         const syncSec = this.state.vocal.syncOffsetMs / 1000;
         const remaining = Math.max(0.2, totalDur - offset);
@@ -1189,7 +1490,7 @@ export class StudioAudioEngine {
       }
     }
 
-    // 2. Vocal Track Source + Full Vocal FX Chain
+    // 2. Vocal Track Source + Full Vocal FX Chain + Optional Harmony Layer
     const vocalBuf = this._getProcessedVocalBuffer(ctx);
     if (vocalBuf) {
       const vSrc = ctx.createBufferSource();
@@ -1207,15 +1508,27 @@ export class StudioAudioEngine {
       this._vocalPan.connect(this._masterChain.input);
 
       const syncSec = this.state.vocal.syncOffsetMs / 1000;
-      if (offset >= syncSec) {
-        const srcOffset = offset - syncSec;
-        if (srcOffset < vocalBuf.duration) {
-          vSrc.start(now, srcOffset);
-          this._activeSources.push(vSrc);
+      const startSource = (src, buf) => {
+        if (offset >= syncSec) {
+          const srcOffset = offset - syncSec;
+          if (srcOffset < buf.duration) {
+            src.start(now, srcOffset);
+            this._activeSources.push(src);
+          }
+        } else {
+          src.start(now + (syncSec - offset), 0);
+          this._activeSources.push(src);
         }
-      } else {
-        vSrc.start(now + (syncSec - offset), 0);
-        this._activeSources.push(vSrc);
+      };
+
+      startSource(vSrc, vocalBuf);
+
+      const harmonyBuf = this._getHarmonyBuffer(ctx, vocalBuf);
+      if (harmonyBuf) {
+        const hSrc = ctx.createBufferSource();
+        hSrc.buffer = harmonyBuf;
+        hSrc.connect(this._vocalChain.harmonyInput);
+        startSource(hSrc, harmonyBuf);
       }
     }
 
@@ -1284,35 +1597,78 @@ export class StudioAudioEngine {
     if (this._vocalChain) {
       const fx = this.state.vocalFx;
       const n = this._vocalChain.nodes;
-      n.hpf.frequency.setTargetAtTime(fx.hpfFreq, now, smooth);
-      n.eqLow.gain.setTargetAtTime(fx.eqLow, now, smooth);
-      n.eqWarmth.gain.setTargetAtTime(fx.eqWarmth, now, smooth);
-      n.eqPresence.gain.setTargetAtTime(fx.eqPresence, now, smooth);
-      n.eqAir.gain.setTargetAtTime(fx.eqAir, now, smooth);
-      n.deEsser.gain.setTargetAtTime(-(fx.deEsser / 100) * 11, now, smooth);
+      const eqOn = fx.eqEnabled !== false;
 
-      if (options.warmthChanged) {
-        n.warmth.curve = createWarmthCurve(fx.warmth);
+      n.hpf.frequency.setTargetAtTime(eqOn ? fx.hpfFreq : 20, now, smooth);
+      n.eqLow.gain.setTargetAtTime(eqOn ? fx.eqLow : 0, now, smooth);
+      n.eqWarmth.gain.setTargetAtTime(eqOn ? fx.eqWarmth : 0, now, smooth);
+      n.eqPresence.gain.setTargetAtTime(eqOn ? fx.eqPresence : 0, now, smooth);
+      n.eqAir.gain.setTargetAtTime(eqOn ? fx.eqAir : 0, now, smooth);
+      n.deEsser.gain.setTargetAtTime(eqOn ? -(fx.deEsser / 100) * 11 : 0, now, smooth);
+
+      if (options.warmthChanged || options.eqToggleChanged) {
+        n.warmth.curve = createWarmthCurve(eqOn ? fx.warmth : 0);
       }
 
+      // Overdrive
+      const driveAmt = fx.driveEnabled ? clamp((fx.driveAmount || 0) / 100, 0, 1) * 0.72 : 0;
+      n.driveWet.gain.setTargetAtTime(driveAmt, now, smooth);
+      n.driveDry.gain.setTargetAtTime(1 - driveAmt * 0.55, now, smooth);
+      if (options.driveChanged) {
+        n.driveShaper.curve = createOverdriveCurve(fx.driveAmount || 0);
+      }
+
+      // Lo-Fi Radio / Telephone / Megaphone
+      const lofiSpec = getLofiFilterSpec(fx.lofiStyle);
+      n.lofiHp.frequency.setTargetAtTime(lofiSpec.hp, now, smooth);
+      n.lofiLp.frequency.setTargetAtTime(lofiSpec.lp, now, smooth);
+      n.lofiPeak.frequency.setTargetAtTime(lofiSpec.peakFreq, now, smooth);
+      n.lofiPeak.Q.setTargetAtTime(lofiSpec.peakQ, now, smooth);
+      n.lofiPeak.gain.setTargetAtTime(lofiSpec.peakGain, now, smooth);
+      const lofiRatio = fx.lofiEnabled ? clamp((fx.lofiMix || 0) / 100, 0, 1) : 0;
+      n.lofiWet.gain.setTargetAtTime(lofiRatio, now, smooth);
+      n.lofiDry.gain.setTargetAtTime(1 - lofiRatio, now, smooth);
+
+      // Compressor
+      const compOn = fx.compEnabled !== false;
       n.comp.threshold.setTargetAtTime(fx.compThreshold, now, smooth);
       n.comp.ratio.setTargetAtTime(Math.max(1, fx.compRatio), now, smooth);
       n.comp.attack.setTargetAtTime(fx.compAttack / 1000, now, smooth);
       n.comp.release.setTargetAtTime(fx.compRelease / 1000, now, smooth);
       n.compMakeup.gain.setTargetAtTime(dbToGain(fx.compMakeup), now, smooth);
+      n.compActiveGain.gain.setTargetAtTime(compOn ? 1 : 0, now, smooth);
+      n.compBypassGain.gain.setTargetAtTime(compOn ? 0 : 1, now, smooth);
 
+      // Flanger / Phaser Modulation
+      n.modLfo.frequency.setTargetAtTime(fx.modRate || 0.6, now, smooth);
+      n.flangerDepth.gain.setTargetAtTime(((fx.modDepth || 40) / 100) * 0.0045, now, smooth);
+      n.phaserDepth.gain.setTargetAtTime(((fx.modDepth || 40) / 100) * 700, now, smooth);
+      const modMixRatio = fx.modEnabled ? clamp((fx.modMix || 0) / 100, 0, 1) * 0.72 : 0;
+      n.flangerWet.gain.setTargetAtTime(fx.modType === 'flanger' ? modMixRatio : 0, now, smooth);
+      n.phaserWet.gain.setTargetAtTime(fx.modType === 'phaser' ? modMixRatio : 0, now, smooth);
+
+      // Harmony mix
+      n.harmonyInput.gain.setTargetAtTime(
+        fx.harmonyEnabled ? clamp((fx.harmonyMix || 0) / 100, 0, 1) * 0.85 : 0,
+        now,
+        smooth
+      );
+
+      // Doubler, Reverb, Delay
       n.doublerWet.gain.setTargetAtTime((fx.doublerMix / 100) * 0.45, now, smooth);
-      n.revPreDelay.delayTime.setTargetAtTime(fx.reverbPreDelay / 1000, now, smooth);
-      n.revWet.gain.setTargetAtTime((fx.reverbMix / 100) * 0.95, now, smooth);
 
+      const revOn = fx.reverbEnabled !== false;
+      n.revPreDelay.delayTime.setTargetAtTime(fx.reverbPreDelay / 1000, now, smooth);
+      n.revWet.gain.setTargetAtTime(revOn ? (fx.reverbMix / 100) * 0.95 : 0, now, smooth);
       if (options.reverbIRChanged) {
         n.convolver.buffer = this._getReverbIR(this.ctx);
       }
 
+      const delOn = fx.delayEnabled !== false;
       n.delayNode.delayTime.setTargetAtTime(fx.delayTimeMs / 1000, now, smooth);
       n.delayTone.frequency.setTargetAtTime(fx.delayToneHz, now, smooth);
       n.delayFeedback.gain.setTargetAtTime(clamp(fx.delayFeedback / 100, 0, 0.78), now, smooth);
-      n.delayWet.gain.setTargetAtTime((fx.delayMix / 100) * 0.75, now, smooth);
+      n.delayWet.gain.setTargetAtTime(delOn ? (fx.delayMix / 100) * 0.75 : 0, now, smooth);
 
       const en = this.state.vocal.fxEnabled;
       n.activeGain.gain.setTargetAtTime(en ? 1 : 0, now, smooth);
@@ -1396,27 +1752,9 @@ export class StudioAudioEngine {
   }
 
   /**
-   * Play a short crisp metronome click for count-in.
+   * Start synchronized vocal recording (works BOTH over backing music AND A Cappella!).
    */
-  playMetronomeClick(accent = false) {
-    const ctx = this.ensureContext();
-    const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const g = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(accent ? 1320 : 880, now);
-    g.gain.setValueAtTime(0.3, now);
-    g.gain.exponentialRampToValueAtTime(0.001, now + 0.055);
-    osc.connect(g);
-    g.connect(ctx.destination);
-    osc.start(now);
-    osc.stop(now + 0.06);
-  }
-
-  /**
-   * Start synchronized vocal recording (optionally playing the backing track in sync).
-   */
-  async startRecording(startSec = 0) {
+  async startRecording(startSec = 0, { acapella = false } = {}) {
     const ctx = this.ensureContext();
     if (!this.micStream) {
       await this.initMicrophone(false);
@@ -1428,7 +1766,6 @@ export class StudioAudioEngine {
     this.playStartOffsetSec = startSec;
     this.isRecording = true;
 
-    // Capture raw uncompressed Float32 PCM directly from microphone
     const bufferSize = 2048;
     this._recorderNode = ctx.createScriptProcessor(bufferSize, 1, 1);
     const silentOut = ctx.createGain();
@@ -1441,7 +1778,6 @@ export class StudioAudioEngine {
       copy.set(inputData);
       this._recordChunksL.push(copy);
 
-      // Compute peak for live waveform drawing
       let peak = 0;
       for (let i = 0; i < inputData.length; i++) {
         const a = Math.abs(inputData[i]);
@@ -1454,11 +1790,16 @@ export class StudioAudioEngine {
     this._recorderNode.connect(silentOut);
     silentOut.connect(ctx.destination);
 
-    const now = ctx.currentTime + 0.02;
+    const now = ctx.currentTime + 0.025;
     this._recordStartTime = now;
 
-    // Play backing track simultaneously if loaded and not muted
-    if (this.backingBuffer && !this.state.backing.muted) {
+    // Align live metronome beat 1 to exact recording start if enabled
+    if (this.state.metronome.enabled) {
+      this._startMetronomeScheduler(now);
+    }
+
+    // Play backing track simultaneously unless A Cappella mode or muted
+    if (!acapella && this.backingBuffer && !this.state.backing.muted) {
       const bSrc = ctx.createBufferSource();
       bSrc.buffer = this.backingBuffer;
       const bGain = ctx.createGain();
@@ -1496,7 +1837,6 @@ export class StudioAudioEngine {
     try { this._recorderNode?.disconnect(); } catch {}
     this._recorderNode = null;
 
-    // Stop backing playback
     this._activeSources.forEach((s) => { try { s.stop(); } catch {} });
     this._activeSources = [];
 
@@ -1504,7 +1844,6 @@ export class StudioAudioEngine {
     if (totalSamples < 512) return null;
 
     const sr = this.ctx.sampleRate;
-    // Prepend silence if recording started after t = 0 so it aligns on timeline
     const padSamples = Math.max(0, Math.floor(this.playStartOffsetSec * sr));
     const buf = this.ctx.createBuffer(2, padSamples + totalSamples, sr);
     const chL = buf.getChannelData(0);
@@ -1522,9 +1861,6 @@ export class StudioAudioEngine {
     return this.addVocalTake(buf);
   }
 
-  /**
-   * Read live metering data (Stereo VU, Mic Input Peak, Compressor GR, FFT Spectrum).
-   */
   getMeterData() {
     const readPeakRms = (analyser) => {
       if (!analyser) return { peak: 0, rms: 0 };
@@ -1550,7 +1886,7 @@ export class StudioAudioEngine {
       this._analyserFFT.getByteFrequencyData(fft);
     }
 
-    const vocalCompGR = (this.isPlaying && this._vocalChain)
+    const vocalCompGR = (this.isPlaying && this._vocalChain && this.state.vocalFx.compEnabled !== false)
       ? Math.abs(this._vocalChain.nodes.comp.reduction || 0)
       : 0;
 
@@ -1568,10 +1904,6 @@ export class StudioAudioEngine {
     };
   }
 
-  /**
-   * Compute the exact combined frequency response (in dB) of the vocal EQ + HPF + De-Esser
-   * across logarithmically spaced frequencies for visual curve plotting.
-   */
   getVocalEqCurve(freqs) {
     if (!this._eqProbeCtx) {
       this._eqProbeCtx = new OfflineAudioContext(1, 64, 44100);
@@ -1596,13 +1928,14 @@ export class StudioAudioEngine {
     }
 
     const fx = this.state.vocalFx;
+    const eqOn = fx.eqEnabled !== false;
     const n = this._eqProbeNodes;
-    n.hpf.frequency.value = fx.hpfFreq;
-    n.low.gain.value = fx.eqLow;
-    n.warm.gain.value = fx.eqWarmth;
-    n.pres.gain.value = fx.eqPresence;
-    n.air.gain.value = fx.eqAir;
-    n.deess.gain.value = -(fx.deEsser / 100) * 11;
+    n.hpf.frequency.value = eqOn ? fx.hpfFreq : 20;
+    n.low.gain.value = eqOn ? fx.eqLow : 0;
+    n.warm.gain.value = eqOn ? fx.eqWarmth : 0;
+    n.pres.gain.value = eqOn ? fx.eqPresence : 0;
+    n.air.gain.value = eqOn ? fx.eqAir : 0;
+    n.deess.gain.value = eqOn ? -(fx.deEsser / 100) * 11 : 0;
 
     const totalDb = new Float32Array(freqs.length);
     const mag = new Float32Array(freqs.length);
@@ -1618,8 +1951,8 @@ export class StudioAudioEngine {
   }
 
   /**
-   * Render the entire mix + vocal FX + mastering chain offline at 44.1 kHz Stereo
-   * and encode to MP3 (via lamejs) or WAV.
+   * Render the entire mix + vocal FX + harmony + mastering chain offline at 44.1 kHz Stereo
+   * and encode to MP3 (via lamejs) or WAV. (Metronome is never included in exports.)
    */
   async exportMix({ format = 'mp3', bitrate = 192, normalize = true, onProgress = null } = {}) {
     if (!this.backingBuffer && !this.activeVocalBuffer) {
@@ -1628,14 +1961,14 @@ export class StudioAudioEngine {
 
     const sampleRate = 44100;
     const baseDur = this.getDuration();
-    // Add tail for Reverb / Delay ring-out
     const hasTail = this.activeVocalBuffer && this.state.vocal.fxEnabled &&
-      (this.state.vocalFx.reverbMix > 0 || this.state.vocalFx.delayMix > 0);
+      ((this.state.vocalFx.reverbEnabled !== false && this.state.vocalFx.reverbMix > 0) ||
+       (this.state.vocalFx.delayEnabled !== false && this.state.vocalFx.delayMix > 0));
     const tailSec = hasTail ? Math.min(3.5, this.state.vocalFx.reverbDecay + 0.6) : 0.3;
     const totalDuration = baseDur + tailSec;
     const totalLength = Math.ceil(totalDuration * sampleRate);
 
-    if (onProgress) onProgress({ stage: 'rendering', percent: 8, message: 'جاري تطبيق الفلاتر وعمل الميكس والماستر...' });
+    if (onProgress) onProgress({ stage: 'rendering', percent: 8, message: 'جاري تطبيق الفلاتر والإيفكتات وعمل الميكس والماستر...' });
 
     const offCtx = new OfflineAudioContext(2, totalLength, sampleRate);
     const masterChain = buildMasterChain(offCtx, this.state);
@@ -1676,14 +2009,11 @@ export class StudioAudioEngine {
       bPan.connect(masterChain.input);
 
       const bOffset = this.state.backing.offsetSec;
-      if (bOffset >= 0) {
-        bSrc.start(bOffset, 0);
-      } else {
-        bSrc.start(0, -bOffset);
-      }
+      if (bOffset >= 0) bSrc.start(bOffset, 0);
+      else bSrc.start(0, -bOffset);
     }
 
-    // 2. Vocal Track + FX
+    // 2. Vocal Track + All FX + Optional Harmony Layer
     if (this.activeVocalBuffer && vocalGain > 0) {
       const gatedVocal = applyNoiseGate(
         offCtx,
@@ -1707,10 +2037,20 @@ export class StudioAudioEngine {
       vPan.connect(masterChain.input);
 
       const syncSec = this.state.vocal.syncOffsetMs / 1000;
-      if (syncSec >= 0) {
-        vSrc.start(syncSec, 0);
-      } else {
-        vSrc.start(0, -syncSec);
+      if (syncSec >= 0) vSrc.start(syncSec, 0);
+      else vSrc.start(0, -syncSec);
+
+      if (this.state.vocal.fxEnabled && this.state.vocalFx.harmonyEnabled) {
+        const hBuf = createPitchShiftedHarmonyBuffer(
+          offCtx,
+          gatedVocal,
+          Number(this.state.vocalFx.harmonyInterval) || 7
+        );
+        const hSrc = offCtx.createBufferSource();
+        hSrc.buffer = hBuf;
+        hSrc.connect(vocalChain.harmonyInput);
+        if (syncSec >= 0) hSrc.start(syncSec, 0);
+        else hSrc.start(0, -syncSec);
       }
     }
 

@@ -1,9 +1,23 @@
 /**
  * Nagham Studio — Main UI Controller & Application Orchestration
+ * Includes: Multi-Track Recording, A Cappella Mode, Precision Metronome,
+ * Creative Vocal FX & Harmony, Smart Auto-Composer, Mastering, and MP3 Export
  */
 
-import { StudioAudioEngine, gainToDb } from './audio-engine.js';
+import { StudioAudioEngine, gainToDb, clamp } from './audio-engine.js';
 import { VOCAL_PRESETS, MASTER_PRESETS, DEMO_BEATS } from './presets.js';
+import {
+  NOTE_NAMES,
+  NOTE_NAMES_AR,
+  SCALES,
+  CHORD_QUALITIES,
+  RHYTHM_STYLES,
+  PLAY_STYLES,
+  formatChordName,
+  analyzeVocalAndComposeChords,
+  buildDefaultProgression,
+  renderComposedArrangement,
+} from './auto-composer.js';
 import {
   computeWaveformPeaks,
   drawWaveformTrack,
@@ -24,8 +38,14 @@ let countInCancelled = false;
 let isCountingIn = false;
 let lastExportUrl = null;
 let restartDebounceTimer = null;
+let lastRecordingWasAcapella = false;
+let tapTimes = [];
 
-// DOM Helpers
+// Smart Auto-Composer State
+let composedChords = buildDefaultProgression(2, 'hijaz', 8); // Default D Hijaz 8 bars
+let detectedScaleId = 'hijaz';
+let detectedRootPc = 2;
+
 const $ = (id) => document.getElementById(id);
 
 function formatTime(sec) {
@@ -63,7 +83,7 @@ function showToast(message, type = 'info') {
     el.style.opacity = '0';
     el.style.transition = 'opacity 0.25s ease';
     setTimeout(() => el.remove(), 260);
-  }, 3600);
+  }, 4000);
 }
 
 // ==========================================================================
@@ -92,19 +112,109 @@ $('btnQuickExport').addEventListener('click', () => {
   $('panel-export').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 });
 
+$('btnOpenComposerFromTrack').addEventListener('click', () => {
+  switchTab('composer');
+  $('panel-composer').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+});
+
 // ==========================================================================
-// Populate Demo Beats & Presets
+// Live Metronome Controls (Toggle/Mute, BPM, Tap Tempo, Time Sig, Volume)
+// ==========================================================================
+function renderMetronomeLeds(beatsPerBar, activeIdx = -1) {
+  const wrap = $('metroBeatLeds');
+  if (wrap.children.length !== beatsPerBar) {
+    wrap.innerHTML = '';
+    for (let i = 0; i < beatsPerBar; i++) {
+      const dot = document.createElement('span');
+      dot.className = 'beat-led';
+      wrap.appendChild(dot);
+    }
+  }
+  Array.from(wrap.children).forEach((dot, idx) => {
+    dot.classList.remove('lit', 'lit-accent');
+    if (idx === activeIdx) {
+      dot.classList.add(idx === 0 ? 'lit-accent' : 'lit');
+    }
+  });
+}
+
+function updateMetronomeUI() {
+  const m = engine.state.metronome;
+  const btn = $('btnMetronomeToggle');
+  btn.classList.toggle('active', m.enabled);
+  $('metroToggleLabel').textContent = m.enabled ? 'المترونوم: شغّال' : 'المترونوم: مكتوم';
+  $('inpBpm').value = m.bpm;
+  $('selTimeSig').value = String(m.beatsPerBar);
+  $('rngMetroVol').value = Math.round(m.volume * 100);
+  $('valMetroVol').textContent = `${Math.round(m.volume * 100)}%`;
+  $('compBpmMirror').textContent = `${m.bpm} BPM`;
+  if (!m.enabled) renderMetronomeLeds(m.beatsPerBar, -1);
+}
+
+engine.onMetronomeBeat = (beatIdx, beatsPerBar) => {
+  renderMetronomeLeds(beatsPerBar, beatIdx);
+  setTimeout(() => {
+    if (!engine.state.metronome.enabled) renderMetronomeLeds(beatsPerBar, -1);
+  }, 140);
+};
+
+$('btnMetronomeToggle').addEventListener('click', () => {
+  engine.setMetronomeEnabled(!engine.state.metronome.enabled);
+  updateMetronomeUI();
+});
+
+function setBpmValue(val) {
+  const clean = clamp(Math.round(Number(val) || 100), 50, 180);
+  engine.setMetronomeBpm(clean);
+  updateMetronomeUI();
+}
+
+$('inpBpm').addEventListener('change', (e) => setBpmValue(e.target.value));
+$('btnBpmDown').addEventListener('click', () => setBpmValue(engine.state.metronome.bpm - 2));
+$('btnBpmUp').addEventListener('click', () => setBpmValue(engine.state.metronome.bpm + 2));
+
+$('btnTapTempo').addEventListener('click', () => {
+  const now = performance.now();
+  if (tapTimes.length > 0 && now - tapTimes[tapTimes.length - 1] > 2200) {
+    tapTimes = [];
+  }
+  tapTimes.push(now);
+  if (tapTimes.length > 5) tapTimes.shift();
+  if (tapTimes.length >= 2) {
+    let sum = 0;
+    for (let i = 1; i < tapTimes.length; i++) sum += tapTimes[i] - tapTimes[i - 1];
+    const avgMs = sum / (tapTimes.length - 1);
+    const bpm = Math.round(60000 / avgMs);
+    setBpmValue(bpm);
+  }
+  engine.playMetronomeClick(tapTimes.length === 1);
+});
+
+$('selTimeSig').addEventListener('change', (e) => {
+  const beats = parseInt(e.target.value, 10) || 4;
+  engine.setMetronomeBeatsPerBar(beats);
+  renderMetronomeLeds(beats, -1);
+  updateMetronomeUI();
+});
+
+$('rngMetroVol').addEventListener('input', (e) => {
+  const pct = parseInt(e.target.value, 10) || 0;
+  engine.setMetronomeVolume(pct / 100);
+  $('valMetroVol').textContent = `${pct}%`;
+});
+
+// ==========================================================================
+// Populate Demo Beats, Presets & Smart Auto-Composer UI
 // ==========================================================================
 function initDemoBeatsAndPresets() {
   const demoSel = $('selectDemoBeat');
   DEMO_BEATS.forEach((b) => {
     const opt = document.createElement('option');
     opt.value = b.id;
-    opt.textContent = `${b.name} (${b.bpm} BPM • ${b.key})`;
+    opt.textContent = `${b.name} (${b.bpm} BPM)`;
     demoSel.appendChild(opt);
   });
 
-  // Vocal Presets
   const vocalGrid = $('vocalPresetsGrid');
   VOCAL_PRESETS.forEach((p) => {
     const btn = document.createElement('button');
@@ -116,7 +226,6 @@ function initDemoBeatsAndPresets() {
     vocalGrid.appendChild(btn);
   });
 
-  // Master Presets
   const masterGrid = $('masterPresetsGrid');
   MASTER_PRESETS.forEach((p) => {
     const btn = document.createElement('button');
@@ -126,10 +235,42 @@ function initDemoBeatsAndPresets() {
     btn.addEventListener('click', () => applyMasterPreset(p));
     masterGrid.appendChild(btn);
   });
+
+  // Populate Auto-Composer selects
+  const rootSel = $('compRootSelect');
+  NOTE_NAMES_AR.forEach((label, idx) => {
+    const opt = document.createElement('option');
+    opt.value = String(idx);
+    opt.textContent = label;
+    rootSel.appendChild(opt);
+  });
+
+  const playStyleSel = $('compPlayStyle');
+  PLAY_STYLES.forEach((s) => {
+    const opt = document.createElement('option');
+    opt.value = s.id;
+    opt.textContent = s.name;
+    playStyleSel.appendChild(opt);
+  });
+
+  const rhythmSel = $('compRhythmSelect');
+  RHYTHM_STYLES.forEach((r) => {
+    const opt = document.createElement('option');
+    opt.value = r.id;
+    opt.textContent = r.name;
+    if (r.id === 'maqsum') opt.selected = true;
+    rhythmSel.appendChild(opt);
+  });
+
+  renderChordsGrid();
 }
 
 function applyVocalPreset(preset) {
   activeVocalPresetId = preset.id;
+  const harmonyChanged =
+    engine.state.vocalFx.harmonyEnabled !== preset.fx.harmonyEnabled ||
+    engine.state.vocalFx.harmonyInterval !== preset.fx.harmonyInterval;
+
   Object.assign(engine.state.vocalFx, preset.fx);
   engine.state.vocal.fxEnabled = preset.id !== 'flat_raw';
   engine._invalidateGatedVocal();
@@ -139,7 +280,8 @@ function applyVocalPreset(preset) {
   });
 
   syncControlsFromState();
-  engine.syncLiveParams({ reverbIRChanged: true, warmthChanged: true });
+  engine.syncLiveParams({ reverbIRChanged: true, warmthChanged: true, driveChanged: true, eqToggleChanged: true });
+  if (harmonyChanged) schedulePlaybackRefresh();
   drawEqCurve($('eqCurveCanvas'), engine);
   showToast(`تم تطبيق قالب الصوت: ${preset.name}`, 'success');
 }
@@ -158,7 +300,205 @@ function applyMasterPreset(preset) {
 }
 
 // ==========================================================================
-// Track Loading (File Upload, Drag & Drop, Built-In Demo Beats)
+// Smart Auto-Composer Logic (Analyze Vocal -> Chords -> Instruments + Rhythm)
+// ==========================================================================
+function renderChordsGrid() {
+  const grid = $('chordsTimelineGrid');
+  grid.innerHTML = '';
+
+  const qualityEntries = Object.entries(CHORD_QUALITIES);
+
+  composedChords.forEach((chord, idx) => {
+    const card = document.createElement('div');
+    card.className = 'chord-card';
+
+    const top = document.createElement('div');
+    top.className = 'chord-card-top';
+    top.innerHTML = `<span>مازورة ${idx + 1}</span>`;
+
+    const nameEl = document.createElement('div');
+    nameEl.className = 'chord-card-name';
+    nameEl.textContent = formatChordName(chord.rootPc, chord.quality);
+
+    const selects = document.createElement('div');
+    selects.className = 'chord-card-selects';
+
+    const selRoot = document.createElement('select');
+    selRoot.className = 'studio-select';
+    NOTE_NAMES.forEach((n, pc) => {
+      const opt = document.createElement('option');
+      opt.value = String(pc);
+      opt.textContent = n;
+      if (pc === chord.rootPc) opt.selected = true;
+      selRoot.appendChild(opt);
+    });
+    selRoot.addEventListener('change', (e) => {
+      chord.rootPc = parseInt(e.target.value, 10);
+      chord.name = formatChordName(chord.rootPc, chord.quality);
+      nameEl.textContent = chord.name;
+    });
+
+    const selQual = document.createElement('select');
+    selQual.className = 'studio-select';
+    qualityEntries.forEach(([qKey, qObj]) => {
+      const opt = document.createElement('option');
+      opt.value = qKey;
+      opt.textContent = qObj.suffix || 'maj';
+      if (qKey === chord.quality) opt.selected = true;
+      selQual.appendChild(opt);
+    });
+    selQual.addEventListener('change', (e) => {
+      chord.quality = e.target.value;
+      chord.name = formatChordName(chord.rootPc, chord.quality);
+      nameEl.textContent = chord.name;
+    });
+
+    selects.appendChild(selRoot);
+    selects.appendChild(selQual);
+    card.appendChild(top);
+    card.appendChild(nameEl);
+    card.appendChild(selects);
+    grid.appendChild(card);
+  });
+}
+
+function getComposerInstrumentsConfig() {
+  return {
+    piano:   { enabled: $('instPianoOn').checked,   volume: Number($('instPianoVol').value) / 100 },
+    guitar:  { enabled: $('instGuitarOn').checked,  volume: Number($('instGuitarVol').value) / 100 },
+    oud:     { enabled: $('instOudOn').checked,     volume: Number($('instOudVol').value) / 100 },
+    strings: { enabled: $('instStringsOn').checked, volume: Number($('instStringsVol').value) / 100 },
+    bass:    { enabled: $('instBassOn').checked,    volume: Number($('instBassVol').value) / 100 },
+    synth:   { enabled: $('instSynthOn').checked,   volume: Number($('instSynthVol').value) / 100 },
+  };
+}
+
+// Instrument volume live labels
+[
+  ['instPianoVol', 'valInstPiano'],
+  ['instGuitarVol', 'valInstGuitar'],
+  ['instOudVol', 'valInstOud'],
+  ['instStringsVol', 'valInstStrings'],
+  ['instBassVol', 'valInstBass'],
+  ['instSynthVol', 'valInstSynth'],
+  ['compRhythmVol', 'valCompRhythmVol'],
+].forEach(([rngId, valId]) => {
+  $(rngId).addEventListener('input', (e) => {
+    $(valId).textContent = `${e.target.value}%`;
+  });
+});
+
+$('btnRebuildDefaultChords').addEventListener('click', () => {
+  const rootSelVal = parseInt($('compRootSelect').value, 10);
+  const scaleSelVal = $('compScaleSelect').value;
+  const numBars = parseInt($('compNumBars').value, 10) || 8;
+  const root = rootSelVal >= 0 ? rootSelVal : detectedRootPc;
+  const scaleId = scaleSelVal !== 'auto' ? scaleSelVal : detectedScaleId;
+
+  composedChords = buildDefaultProgression(root, scaleId, numBars);
+  renderChordsGrid();
+  const sName = SCALES[scaleId]?.name || scaleId;
+  $('detectedKeyBadge').textContent = `المقام المختار: ${NOTE_NAMES_AR[root]} • ${sName}`;
+  showToast('تم تحديث خريطة الكوردات حسب المقام المختار.', 'info');
+});
+
+function runVocalAnalysis() {
+  if (!engine.activeVocalBuffer) {
+    showToast('سجّل صوت غناء أولاً (بزر «غناء بدون موسيقى») أو اختر المقام يدوياً واضغط «توليد التوزيع».', 'info');
+    return false;
+  }
+
+  const preferredRoot = parseInt($('compRootSelect').value, 10);
+  const preferredScaleId = $('compScaleSelect').value;
+  const res = analyzeVocalAndComposeChords(engine.activeVocalBuffer, {
+    bpm: engine.state.metronome.bpm,
+    beatsPerBar: engine.state.metronome.beatsPerBar,
+    preferredScaleId,
+    preferredRoot,
+  });
+
+  detectedRootPc = res.rootPc;
+  detectedScaleId = res.scaleId;
+  composedChords = res.chords;
+  renderChordsGrid();
+
+  const scaleLabel = SCALES[res.scaleId]?.name || res.scaleId;
+  const confPct = Math.round(res.confidence * 100);
+  $('detectedKeyBadge').textContent = res.voicedFrames >= 4
+    ? `تم الاكتشاف: ${NOTE_NAMES_AR[res.rootPc]} • ${scaleLabel} (تطابق ${confPct}%)`
+    : `تأليف افتراضي: ${NOTE_NAMES_AR[res.rootPc]} • ${scaleLabel}`;
+
+  showToast(`تم تحليل غنائك وتأليف ${res.chords.length} مازورة كوردات على ${NOTE_NAMES_AR[res.rootPc]} (${scaleLabel})!`, 'success');
+  return true;
+}
+
+$('btnAnalyzeVocal').addEventListener('click', () => {
+  runVocalAnalysis();
+});
+
+async function handleGenerateArrangement() {
+  const instruments = getComposerInstrumentsConfig();
+  const rhythmStyle = $('compRhythmSelect').value;
+  const rhythmVolume = Number($('compRhythmVol').value) / 100;
+  const playStyle = $('compPlayStyle').value;
+
+  const anyInst = Object.values(instruments).some((i) => i.enabled && i.volume > 0.01);
+  if (!anyInst && rhythmStyle === 'none') {
+    showToast('اختر آلة موسيقية واحدة على الأقل أو اختر إيقاعاً قبل التوليد!', 'error');
+    return;
+  }
+
+  // If user recorded vocals and hasn't analyzed yet, auto-analyze first to match length & key!
+  if (engine.activeVocalBuffer && $('compRootSelect').value === '-1' && $('compScaleSelect').value === 'auto') {
+    const barSec = (60 / engine.state.metronome.bpm) * engine.state.metronome.beatsPerBar;
+    const neededBars = Math.max(4, Math.ceil(engine.activeVocalBuffer.duration / barSec));
+    if (composedChords.length !== neededBars) {
+      runVocalAnalysis();
+    }
+  }
+
+  const btn1 = $('btnGenerateArrangement');
+  const btn2 = $('btnGenerateArrangementBottom');
+  btn1.disabled = true;
+  btn2.disabled = true;
+  showToast('جاري تأليف وعزف الآلات والإيقاع بدقة استوديو...', 'info');
+
+  try {
+    engine.ensureContext();
+    const buf = await renderComposedArrangement({
+      chords: composedChords,
+      bpm: engine.state.metronome.bpm,
+      beatsPerBar: engine.state.metronome.beatsPerBar,
+      playStyle,
+      rhythmStyle,
+      rhythmVolume,
+      instruments,
+    });
+
+    const scaleName = SCALES[detectedScaleId]?.name || '';
+    const title = `توزيع مؤلَّف (${NOTE_NAMES[detectedRootPc]} ${scaleName} • ${engine.state.metronome.bpm} BPM)`;
+    engine.setBackingBuffer(buf, title);
+    backingPeaks = computeWaveformPeaks(buf, 650);
+    $('backingFileName').textContent = `${title} — ${formatTime(buf.duration)}`;
+    $('btnClearBacking').classList.remove('hidden');
+    $('selectDemoBeat').value = '';
+    updateTransportUI();
+
+    showToast('تم تأليف وتوليد التوزيع الموسيقي بنجاح! اضغط تشغيل للاستماع مع غنائك.', 'success');
+  } catch (err) {
+    console.error(err);
+    showToast(`تعذّر توليد التوزيع: ${err.message}`, 'error');
+  } finally {
+    btn1.disabled = false;
+    btn2.disabled = false;
+  }
+}
+
+$('btnGenerateArrangement').addEventListener('click', handleGenerateArrangement);
+$('btnGenerateArrangementBottom').addEventListener('click', handleGenerateArrangement);
+
+// ==========================================================================
+// Track Loading (File Upload, Drag & Drop, Demo Beats, Clear Backing)
 // ==========================================================================
 async function handleBackingLoad(file) {
   try {
@@ -166,6 +506,7 @@ async function handleBackingLoad(file) {
     const buf = await engine.loadBackingFile(file);
     backingPeaks = computeWaveformPeaks(buf, 650);
     $('backingFileName').textContent = `${file.name} (${formatTime(buf.duration)})`;
+    $('btnClearBacking').classList.remove('hidden');
     $('selectDemoBeat').value = '';
     updateTransportUI();
     showToast('تم إضافة الموسيقى الخلفية بنجاح!', 'success');
@@ -188,6 +529,16 @@ async function handleVocalLoad(file) {
     showToast('تعذّر قراءة ملف صوت الغناء.', 'error');
   }
 }
+
+$('btnClearBacking').addEventListener('click', () => {
+  engine.clearBackingTrack();
+  backingPeaks = null;
+  $('backingFileName').textContent = 'لا توجد موسيقى — يمكنك الغناء بدون موسيقى وتأليف كوردات تلقائياً';
+  $('btnClearBacking').classList.add('hidden');
+  $('selectDemoBeat').value = '';
+  updateTransportUI();
+  showToast('تم مسح الموسيقى الخلفية — يمكنك الآن الغناء بدون موسيقى.', 'info');
+});
 
 $('btnUploadBacking').addEventListener('click', () => $('backingFileInput').click());
 $('backingFileInput').addEventListener('change', (e) => {
@@ -212,6 +563,8 @@ $('selectDemoBeat').addEventListener('change', async (e) => {
     const buf = await engine.loadDemoBeat(id, info.name);
     backingPeaks = computeWaveformPeaks(buf, 650);
     $('backingFileName').textContent = `إيقاع مدمج: ${info.name} (${formatTime(buf.duration)})`;
+    $('btnClearBacking').classList.remove('hidden');
+    setBpmValue(info.bpm);
     updateTransportUI();
     showToast(`تم تجهيز ${info.name} — اضغط تشغيل أو ابدأ تسجيل غنائك!`, 'success');
   } catch (err) {
@@ -220,7 +573,6 @@ $('selectDemoBeat').addEventListener('change', async (e) => {
   }
 });
 
-// Drag & Drop support on both tracks
 document.querySelectorAll('[data-dropzone]').forEach((zone) => {
   zone.addEventListener('dragover', (e) => {
     e.preventDefault();
@@ -279,7 +631,7 @@ $('btnDeleteTake').addEventListener('click', () => {
 });
 
 // ==========================================================================
-// Transport & Synchronized Vocal Recording
+// Transport & Synchronized / A Cappella Vocal Recording
 // ==========================================================================
 function updateTransportUI() {
   const playing = engine.isPlaying;
@@ -303,7 +655,7 @@ $('btnPlayPause').addEventListener('click', () => {
     engine.pause();
   } else {
     if (!engine.backingBuffer && !engine.activeVocalBuffer) {
-      showToast('أضف موسيقى خلفية أو اختر إيقاعاً تجريبياً أولاً.', 'info');
+      showToast('سجّل غناءك أو أضف موسيقى أو ألّف كوردات من «التأليف الذكي» أولاً.', 'info');
       return;
     }
     engine.play();
@@ -356,13 +708,17 @@ $('chkMonitor').addEventListener('change', (e) => {
   }
 });
 
-async function runCountIn() {
+async function runCountIn(acapella = false) {
   isCountingIn = true;
   countInCancelled = false;
   const overlay = $('countInOverlay');
   const numEl = $('countInNumber');
+  $('countInLabel').textContent = acapella
+    ? 'استعد للغناء بدون موسيقى (أكابيلا)...'
+    : 'استعد للغناء...';
   overlay.classList.remove('hidden');
 
+  const beatMs = Math.round(60000 / clamp(engine.state.metronome.bpm, 50, 180));
   for (let i = 3; i >= 1; i--) {
     if (countInCancelled) {
       overlay.classList.add('hidden');
@@ -371,7 +727,7 @@ async function runCountIn() {
     }
     numEl.textContent = String(i);
     engine.playMetronomeClick(i === 1);
-    await new Promise((r) => setTimeout(r, 650));
+    await new Promise((r) => setTimeout(r, beatMs));
   }
 
   overlay.classList.add('hidden');
@@ -384,13 +740,19 @@ function finishRecording() {
   updateTransportUI();
   if (take) {
     refreshVocalTakesUI();
-    showToast(`تم حفظ "${take.name}" بنجاح! اضغط تشغيل لسماع الصوت مع الفلاتر.`, 'success');
+    if (lastRecordingWasAcapella || !engine.backingBuffer) {
+      switchTab('composer');
+      runVocalAnalysis();
+      showToast('تم حفظ غنائك وتحليله! اختر الآلات والإيقاع واضغط «توليد التوزيع» لتأليف الموسيقى على صوتك.', 'success');
+    } else {
+      showToast(`تم حفظ "${take.name}" بنجاح! اضغط تشغيل لسماع الصوت مع الإيفكتات.`, 'success');
+    }
   } else {
     showToast('التسجيل قصير جداً ولم يتم حفظه.', 'info');
   }
 }
 
-$('btnRecord').addEventListener('click', async () => {
+async function beginRecordingFlow(acapella = false) {
   if (isCountingIn) {
     countInCancelled = true;
     return;
@@ -411,21 +773,32 @@ $('btnRecord').addEventListener('click', async () => {
     return;
   }
 
-  const startFrom = engine.playheadSec >= engine.getDuration() - 0.5 ? 0 : engine.playheadSec;
+  lastRecordingWasAcapella = acapella;
+  const startFrom = acapella
+    ? 0
+    : (engine.playheadSec >= engine.getDuration() - 0.5 ? 0 : engine.playheadSec);
   engine.stop(false);
 
   if ($('chkCountIn').checked) {
-    const ok = await runCountIn();
+    const ok = await runCountIn(acapella);
     if (!ok) return;
   }
 
-  await engine.startRecording(startFrom);
+  await engine.startRecording(startFrom, { acapella });
   updateTransportUI();
-  showToast('بدأ التسجيل الآن... غنّ مع الموسيقى!', 'info');
-});
+  showToast(
+    acapella
+      ? 'بدأ تسجيل الغناء بدون موسيقى... غنّ بحرية ثم اضغط «إنهاء التسجيل» ليؤلّف البرنامج الكوردات!'
+      : 'بدأ التسجيل الآن... غنّ مع الموسيقى!',
+    'info'
+  );
+}
+
+$('btnRecord').addEventListener('click', () => beginRecordingFlow(false));
+$('btnRecordAcapella').addEventListener('click', () => beginRecordingFlow(true));
 
 // ==========================================================================
-// Waveform Scrubbing (Click & Drag Seek)
+// Waveform Scrubbing
 // ==========================================================================
 function bindWaveformScrub(canvas) {
   let dragging = false;
@@ -454,7 +827,7 @@ bindWaveformScrub($('backingWaveCanvas'));
 bindWaveformScrub($('vocalWaveCanvas'));
 
 // ==========================================================================
-// Mixer, Vocal FX, and Mastering Controls Binding
+// Mixer, Vocal FX, Creative FX & Mastering Controls Binding
 // ==========================================================================
 function schedulePlaybackRefresh() {
   if (!engine.isPlaying) return;
@@ -465,6 +838,12 @@ function schedulePlaybackRefresh() {
       engine.play(pos);
     }
   }, 180);
+}
+
+function setPill(id, active, onLabel = 'مفعّل', offLabel = 'مطفأ') {
+  const el = $(id);
+  el.classList.toggle('active', !!active);
+  el.textContent = active ? onLabel : offLabel;
 }
 
 function syncControlsFromState() {
@@ -489,10 +868,37 @@ function syncControlsFromState() {
   $('btnVocalMute').classList.toggle('active-mute', s.vocal.muted);
   $('btnVocalSolo').classList.toggle('active-solo', s.vocal.solo);
 
-  $('btnVocalFxToggle').classList.toggle('active', s.vocal.fxEnabled);
-  $('btnVocalFxToggle').textContent = s.vocal.fxEnabled ? 'FX مفعّل' : 'FX متوقف';
+  setPill('btnVocalFxToggle', s.vocal.fxEnabled, 'FX مفعّل', 'FX متوقف');
+  setPill('btnToggleEq', fx.eqEnabled !== false);
+  setPill('btnToggleComp', fx.compEnabled !== false);
+  setPill('btnToggleReverb', fx.reverbEnabled !== false, 'صدى مفعّل', 'صدى مطفأ');
+  setPill('btnToggleDelay', fx.delayEnabled !== false, 'ديلاي مفعّل', 'ديلاي مطفأ');
 
-  // Vocal FX
+  // Creative FX Pills & Sliders
+  setPill('btnToggleHarmony', fx.harmonyEnabled);
+  $('fxHarmonyInterval').value = String(fx.harmonyInterval);
+  $('fxHarmonyMix').value = fx.harmonyMix;
+  $('valFxHarmonyMix').textContent = `${fx.harmonyMix}%`;
+
+  setPill('btnToggleMod', fx.modEnabled);
+  $('fxModType').value = fx.modType;
+  $('fxModRate').value = fx.modRate;
+  $('valFxModRate').textContent = `${Number(fx.modRate).toFixed(1)} Hz`;
+  $('fxModDepth').value = fx.modDepth;
+  $('valFxModDepth').textContent = `${fx.modDepth}%`;
+  $('fxModMix').value = fx.modMix;
+  $('valFxModMix').textContent = `${fx.modMix}%`;
+
+  setPill('btnToggleLofi', fx.lofiEnabled);
+  $('fxLofiStyle').value = fx.lofiStyle;
+  $('fxLofiMix').value = fx.lofiMix;
+  $('valFxLofiMix').textContent = `${fx.lofiMix}%`;
+
+  setPill('btnToggleDrive', fx.driveEnabled);
+  $('fxDriveAmount').value = fx.driveAmount;
+  $('valFxDriveAmount').textContent = `${fx.driveAmount}%`;
+
+  // Vocal EQ & Dynamics
   $('fxHpf').value = fx.hpfFreq;
   $('valFxHpf').textContent = `${fx.hpfFreq} Hz`;
   $('fxGate').value = fx.gateThreshold;
@@ -542,8 +948,7 @@ function syncControlsFromState() {
   $('valFxDelayTone').textContent = `${(fx.delayToneHz / 1000).toFixed(1)} kHz`;
 
   // Master
-  $('btnMasterToggle').classList.toggle('active', m.enabled);
-  $('btnMasterToggle').textContent = m.enabled ? 'الماستر مفعّل' : 'الماستر متوقف';
+  setPill('btnMasterToggle', m.enabled, 'الماستر مفعّل', 'الماستر متوقف');
   $('msEqLow').value = m.eqLow;
   $('valMsEqLow').textContent = formatDb(m.eqLow);
   $('msEqMid').value = m.eqMid;
@@ -603,7 +1008,74 @@ $('btnVocalFxToggle').addEventListener('click', () => {
   drawEqCurve($('eqCurveCanvas'), engine);
 });
 
-// Vocal FX Sliders
+// Per-Module FX Toggles
+$('btnToggleEq').addEventListener('click', () => {
+  engine.state.vocalFx.eqEnabled = !(engine.state.vocalFx.eqEnabled !== false);
+  syncControlsFromState();
+  engine.syncLiveParams({ eqToggleChanged: true });
+  drawEqCurve($('eqCurveCanvas'), engine);
+});
+$('btnToggleComp').addEventListener('click', () => {
+  engine.state.vocalFx.compEnabled = !(engine.state.vocalFx.compEnabled !== false);
+  syncControlsFromState();
+  engine.syncLiveParams();
+});
+$('btnToggleReverb').addEventListener('click', () => {
+  engine.state.vocalFx.reverbEnabled = !(engine.state.vocalFx.reverbEnabled !== false);
+  syncControlsFromState();
+  engine.syncLiveParams();
+});
+$('btnToggleDelay').addEventListener('click', () => {
+  engine.state.vocalFx.delayEnabled = !(engine.state.vocalFx.delayEnabled !== false);
+  syncControlsFromState();
+  engine.syncLiveParams();
+});
+
+// Creative FX Controls
+$('btnToggleHarmony').addEventListener('click', () => {
+  engine.state.vocalFx.harmonyEnabled = !engine.state.vocalFx.harmonyEnabled;
+  syncControlsFromState();
+  schedulePlaybackRefresh();
+});
+$('fxHarmonyInterval').addEventListener('change', (e) => {
+  engine.state.vocalFx.harmonyInterval = parseInt(e.target.value, 10);
+  engine._harmonyCache = { key: '', buffer: null };
+  schedulePlaybackRefresh();
+});
+bindSlider('fxHarmonyMix', (v) => { engine.state.vocalFx.harmonyMix = v; engine.syncLiveParams(); });
+
+$('btnToggleMod').addEventListener('click', () => {
+  engine.state.vocalFx.modEnabled = !engine.state.vocalFx.modEnabled;
+  syncControlsFromState();
+  engine.syncLiveParams();
+});
+$('fxModType').addEventListener('change', (e) => {
+  engine.state.vocalFx.modType = e.target.value;
+  engine.syncLiveParams();
+});
+bindSlider('fxModRate', (v) => { engine.state.vocalFx.modRate = v; engine.syncLiveParams(); });
+bindSlider('fxModDepth', (v) => { engine.state.vocalFx.modDepth = v; engine.syncLiveParams(); });
+bindSlider('fxModMix', (v) => { engine.state.vocalFx.modMix = v; engine.syncLiveParams(); });
+
+$('btnToggleLofi').addEventListener('click', () => {
+  engine.state.vocalFx.lofiEnabled = !engine.state.vocalFx.lofiEnabled;
+  syncControlsFromState();
+  engine.syncLiveParams();
+});
+$('fxLofiStyle').addEventListener('change', (e) => {
+  engine.state.vocalFx.lofiStyle = e.target.value;
+  engine.syncLiveParams();
+});
+bindSlider('fxLofiMix', (v) => { engine.state.vocalFx.lofiMix = v; engine.syncLiveParams(); });
+
+$('btnToggleDrive').addEventListener('click', () => {
+  engine.state.vocalFx.driveEnabled = !engine.state.vocalFx.driveEnabled;
+  syncControlsFromState();
+  engine.syncLiveParams({ driveChanged: true });
+});
+bindSlider('fxDriveAmount', (v) => { engine.state.vocalFx.driveAmount = v; engine.syncLiveParams({ driveChanged: true }); });
+
+// Vocal EQ & Dynamics Sliders
 const onEqChange = () => {
   engine.syncLiveParams();
   drawEqCurve($('eqCurveCanvas'), engine);
@@ -738,6 +1210,9 @@ window.addEventListener('keydown', (e) => {
   } else if (e.key === 'r' || e.key === 'R') {
     e.preventDefault();
     $('btnRecord').click();
+  } else if (e.key === 't' || e.key === 'T') {
+    e.preventDefault();
+    $('btnMetronomeToggle').click();
   } else if (e.code === 'Home') {
     e.preventDefault();
     $('btnRewind').click();
@@ -747,13 +1222,12 @@ window.addEventListener('keydown', (e) => {
 });
 
 // ==========================================================================
-// Real-Time Animation Loop (Waveforms, Playhead, VU Meters, FFT, GR)
+// Real-Time Animation Loop
 // ==========================================================================
 function animationLoop() {
   const curTime = engine.getCurrentTime();
   const totalDur = engine.getDuration();
 
-  // Auto-stop when playback finishes
   if (engine.isPlaying && totalDur > 0 && curTime >= totalDur + 0.05) {
     engine.stop(true);
     updateTransportUI();
@@ -762,7 +1236,6 @@ function animationLoop() {
   $('timeCurrent').textContent = formatTime(curTime);
   $('timeTotal').textContent = formatTime(totalDur);
 
-  // Draw Track 1 (Backing Waveform)
   drawWaveformTrack($('backingWaveCanvas'), {
     peaks: backingPeaks,
     bufferDuration: engine.backingBuffer ? engine.backingBuffer.duration : 0,
@@ -772,10 +1245,9 @@ function animationLoop() {
     color: '#e59a3c',
     bgTint: 'rgba(229, 154, 60, 0.07)',
     muted: engine.state.backing.muted,
-    emptyLabel: 'ارفع ملف موسيقى (MP3/WAV) أو اختر إيقاعاً جاهزاً من القائمة',
+    emptyLabel: 'ارفع موسيقى أو ألّف كوردات وآلات تلقائياً بعد الغناء بدون موسيقى',
   });
 
-  // Draw Track 2 (Vocal Waveform or Live Recording Waveform)
   drawWaveformTrack($('vocalWaveCanvas'), {
     peaks: vocalPeaks,
     bufferDuration: engine.activeVocalBuffer ? engine.activeVocalBuffer.duration : 0,
@@ -788,17 +1260,14 @@ function animationLoop() {
     isRecording: engine.isRecording,
     recordPeaks: engine.recordPeakHistory,
     recordStartSec: engine.playStartOffsetSec,
-    emptyLabel: 'اضغط «تسجيل غناء» للبدء، أو استورد تسجيل غناء جاهز',
+    emptyLabel: 'اضغط «تسجيل غناء» أو «غناء بدون موسيقى (أكابيلا)» للبدء',
   });
 
-  // Meters
   const meters = engine.getMeterData();
 
-  // Mic Live Input Bar
   const micPct = Math.min(100, Math.max(0, ((gainToDb(meters.mic.peak) + 54) / 54) * 100));
   $('micMeterFill').style.width = `${engine.micStream ? micPct : 0}%`;
 
-  // Stereo VU Meters
   topVu.update(meters.masterL.peak, meters.masterR.peak);
   topVu.draw($('topVuCanvas'));
 
@@ -812,7 +1281,6 @@ function animationLoop() {
     $('masterGrVal').textContent = `-${meters.masterGlueGR.toFixed(1)} dB`;
   }
 
-  // Vocal Compressor Gain Reduction Meter
   const gr = meters.vocalCompGR;
   $('vocalGrBar').style.width = `${Math.min(100, (gr / 18) * 100)}%`;
   $('vocalGrVal').textContent = `-${gr.toFixed(1)} dB`;
@@ -825,6 +1293,7 @@ function animationLoop() {
 // ==========================================================================
 initDemoBeatsAndPresets();
 syncControlsFromState();
+updateMetronomeUI();
 drawEqCurve($('eqCurveCanvas'), engine);
 window.addEventListener('resize', () => {
   if ($('panel-vocal-fx').classList.contains('active')) {

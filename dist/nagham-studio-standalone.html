@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>استوديو النغم | تسجيل الغناء، فلاتر الصوت، الميكس والماستر وتصدير MP3</title>
-  <meta name="description" content="استوديو موسيقي متكامل في المتصفح لإضافة الموسيقى وتسجيل صوت الغناء عليها مع فلاتر صوت احترافية وميكس وماستر واستخراج مباشر بصيغة MP3." />
+  <title>استوديو النغم | تسجيل الغناء، إيفكتات الصوت، تأليف الكوردات والآلات، الميكس والماستر وتصدير MP3</title>
+  <meta name="description" content="استوديو موسيقي متكامل في المتصفح للغناء مع أو بدون موسيقى، تأليف كوردات وتآلفات آلات وإيقاعات تلقائياً، إيفكتات صوت احترافية، مترونوم، ميكس وماستر واستخراج مباشر بصيغة MP3." />
   <style>
 /* ==========================================================================
    Nagham Studio — Warm Analog Console Theme (Vanilla CSS)
@@ -1208,6 +1208,353 @@ kbd {
 }
 
 /* ==========================================================================
+   Metronome Strip, A Cappella, Creative FX & Smart Auto-Composer Styles
+   ========================================================================== */
+.acapella-btn {
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.36);
+  color: #7dd3fc;
+}
+
+.acapella-btn:hover {
+  background: rgba(56, 189, 248, 0.22);
+  border-color: rgba(56, 189, 248, 0.56);
+}
+
+.small-btn.composer-outline {
+  border-color: rgba(56, 189, 248, 0.4);
+  color: var(--accent-vocal);
+  background: rgba(56, 189, 248, 0.08);
+}
+
+.small-btn.composer-outline:hover {
+  background: rgba(56, 189, 248, 0.18);
+}
+
+.metronome-strip {
+  width: 100%;
+  padding-top: 10px;
+  margin-top: 2px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.metro-toggle-btn {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.metro-toggle-btn:hover {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.metro-toggle-btn.active {
+  background: var(--accent-amber-soft);
+  border-color: var(--accent-amber);
+  color: var(--accent-amber);
+}
+
+.metro-leds {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+}
+
+.beat-led {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  transition: background 0.06s ease, transform 0.06s ease;
+}
+
+.beat-led.lit {
+  background: var(--accent-amber);
+  transform: scale(1.22);
+}
+
+.beat-led.lit-accent {
+  background: var(--status-green);
+  transform: scale(1.3);
+}
+
+.metro-bpm-group,
+.metro-sig-group,
+.metro-vol-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.metro-lbl {
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.metro-unit {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.bpm-step-btn {
+  width: 26px;
+  height: 28px;
+  border-radius: 5px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.bpm-step-btn:hover {
+  background: #2c3342;
+}
+
+.bpm-input {
+  width: 56px;
+  height: 28px;
+  text-align: center;
+  border-radius: 5px;
+  background: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.compact-sel {
+  flex: 0 0 auto;
+  width: 68px;
+  height: 28px;
+}
+
+.metro-vol-group input[type="range"] {
+  width: 82px;
+}
+
+.val-tag-sm {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  min-width: 34px;
+  text-align: left;
+}
+
+.metro-note {
+  margin-inline-start: auto;
+  font-size: 0.73rem;
+  color: var(--text-muted);
+}
+
+/* Module Head Actions & Creative FX Sub-Boxes */
+.module-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.creative-fx-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.sub-fx-box {
+  background: rgba(13, 15, 19, 0.55);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sub-fx-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.83rem;
+}
+
+.sub-fx-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.77rem;
+  color: var(--text-secondary);
+}
+
+.sub-fx-row label {
+  white-space: nowrap;
+}
+
+.sub-fx-desc {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.controls-grid.tight {
+  gap: 8px;
+}
+
+/* Smart Auto-Composer Banner, Chords & Instruments */
+.composer-banner {
+  background: linear-gradient(180deg, rgba(56, 189, 248, 0.08) 0%, rgba(229, 154, 60, 0.05) 100%);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: var(--radius-md);
+  padding: 15px 18px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.composer-banner h3 {
+  margin: 0 0 4px;
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.composer-banner p {
+  margin: 0;
+  font-size: 0.81rem;
+  color: var(--text-secondary);
+  max-width: 680px;
+}
+
+.composer-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.accent-gen-btn {
+  border-color: rgba(56, 189, 248, 0.4);
+  color: #7dd3fc;
+}
+
+.composer-settings-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.chords-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.chords-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(136px, 1fr));
+  gap: 9px;
+}
+
+.chord-card {
+  background: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 9px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.chord-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.chord-card-name {
+  font-family: var(--font-mono);
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--accent-amber);
+  direction: ltr;
+}
+
+.chord-card-selects {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+
+.chord-card-selects select {
+  height: 24px;
+  font-size: 0.72rem;
+  padding: 0 4px;
+}
+
+.instruments-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.inst-card {
+  display: grid;
+  grid-template-columns: 175px 1fr 38px;
+  align-items: center;
+  gap: 10px;
+  background: rgba(13, 15, 19, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-sm);
+  padding: 8px 11px;
+}
+
+.inst-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.inst-check input {
+  accent-color: var(--accent-amber);
+  width: 15px;
+  height: 15px;
+}
+
+/* ==========================================================================
    Responsive Breakpoints
    ========================================================================== */
 @media (max-width: 1080px) {
@@ -1221,7 +1568,9 @@ kbd {
   .track-wave-col {
     min-height: 120px;
   }
-  .controls-grid.cols-4 {
+  .controls-grid.cols-4,
+  .creative-fx-grid,
+  .composer-settings-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .fx-rack-grid,
@@ -1239,9 +1588,17 @@ kbd {
   }
   .controls-grid.cols-4,
   .controls-grid.cols-2,
+  .creative-fx-grid,
+  .composer-settings-row,
   .form-row-2,
   .track-mixer-row.two-col {
     grid-template-columns: 1fr;
+  }
+  .inst-card {
+    grid-template-columns: 1fr 38px;
+  }
+  .inst-check {
+    grid-column: span 2;
   }
   .control-item.span-2 {
     grid-column: span 1;
@@ -1254,7 +1611,7 @@ kbd {
   <!-- Count-In Overlay -->
   <div id="countInOverlay" class="countin-overlay hidden" aria-live="assertive">
     <div class="countin-box">
-      <div class="countin-label">استعد للغناء...</div>
+      <div id="countInLabel" class="countin-label">استعد للغناء...</div>
       <div id="countInNumber" class="countin-number">3</div>
     </div>
   </div>
@@ -1267,7 +1624,7 @@ kbd {
   <input id="vocalFileInput" type="file" accept="audio/*" hidden />
 
   <div class="studio-shell">
-    <!-- Top Transport & Header Bar -->
+    <!-- Top Transport, Metronome & Header Bar -->
     <header class="transport-bar">
       <div class="brand">
         <div class="brand-mark" aria-hidden="true">
@@ -1279,7 +1636,7 @@ kbd {
         </div>
         <div>
           <h1 class="brand-title">استوديو النغم</h1>
-          <p class="brand-sub">تسجيل غناء • فلاتر صوت • ميكس وماستر • MP3</p>
+          <p class="brand-sub">غناء • إيفكتات • تأليف كوردات وآلات • إيقاع ومترونوم • MP3</p>
         </div>
       </div>
 
@@ -1303,9 +1660,17 @@ kbd {
           <span id="recBtnLabel">تسجيل غناء</span>
         </button>
 
+        <button id="btnRecordAcapella" class="transport-btn acapella-btn" title="تسجيل غناء بدون موسيقى لتأليف كوردات وآلات عليه تلقائياً">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+          </svg>
+          <span>غناء بدون موسيقى</span>
+        </button>
+
         <label class="toggle-chip" title="تشغيل عد تنازلي 3-2-1 قبل التسجيل">
           <input id="chkCountIn" type="checkbox" checked />
-          <span>عد تنازلي 3-2-1</span>
+          <span>عد 3-2-1</span>
         </label>
       </div>
 
@@ -1328,6 +1693,50 @@ kbd {
           <span>تصدير MP3</span>
         </button>
       </div>
+
+      <!-- Dedicated Live Metronome Strip -->
+      <div class="metronome-strip" role="group" aria-label="التحكم في المترونوم والسرعة">
+        <button id="btnMetronomeToggle" class="metro-toggle-btn" title="تشغيل أو كتم المترونوم في أي وقت (اختصار T)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 21h12L15 3H9L6 21Z"/>
+            <line x1="12" y1="16" x2="17" y2="7"/>
+          </svg>
+          <span id="metroToggleLabel">المترونوم: مكتوم</span>
+        </button>
+
+        <div id="metroBeatLeds" class="metro-leds" aria-hidden="true">
+          <span class="beat-led"></span>
+          <span class="beat-led"></span>
+          <span class="beat-led"></span>
+          <span class="beat-led"></span>
+        </div>
+
+        <div class="metro-bpm-group">
+          <label for="inpBpm" class="metro-lbl">السرعة</label>
+          <button id="btnBpmDown" class="bpm-step-btn" title="خفض السرعة">-</button>
+          <input id="inpBpm" type="number" class="bpm-input mono" min="50" max="180" value="100" />
+          <button id="btnBpmUp" class="bpm-step-btn" title="رفع السرعة">+</button>
+          <span class="metro-unit mono">BPM</span>
+          <button id="btnTapTempo" class="small-btn" title="انقر عدة مرات على إيقاعك لضبط السرعة تلقائياً">نقر السرعة (Tap)</button>
+        </div>
+
+        <div class="metro-sig-group">
+          <label for="selTimeSig" class="metro-lbl">الميزان</label>
+          <select id="selTimeSig" class="studio-select compact-sel">
+            <option value="4" selected>4/4</option>
+            <option value="3">3/4</option>
+            <option value="6">6/8</option>
+          </select>
+        </div>
+
+        <div class="metro-vol-group">
+          <label for="rngMetroVol" class="metro-lbl">صوت المترونوم</label>
+          <input id="rngMetroVol" type="range" min="0" max="100" step="2" value="65" />
+          <span id="valMetroVol" class="mono val-tag-sm">65%</span>
+        </div>
+
+        <span class="metro-note">المترونوم للغناء فقط ولا يدخل في ملف MP3</span>
+      </div>
     </header>
 
     <!-- Main Multi-Track Timeline Section -->
@@ -1337,15 +1746,17 @@ kbd {
         <div class="track-controls">
           <div class="track-header">
             <span class="track-badge backing">تراك 1</span>
-            <h2 class="track-name">الموسيقى الخلفية (البيت)</h2>
+            <h2 class="track-name">الموسيقى الخلفية / التوزيع</h2>
+            <button id="btnClearBacking" class="small-btn danger-ghost hidden" title="إزالة الموسيقى الخلفية للغناء بدون موسيقى">مسح</button>
           </div>
-          <div id="backingFileName" class="track-filename">لم يتم إضافة موسيقى بعد</div>
+          <div id="backingFileName" class="track-filename">لا توجد موسيقى — يمكنك الغناء بدون موسيقى وتأليف كوردات تلقائياً</div>
 
           <div class="track-actions">
             <button id="btnUploadBacking" class="small-btn accent-outline">رفع ملف صوتي</button>
+            <button id="btnOpenComposerFromTrack" class="small-btn composer-outline">تأليف كوردات وآلات</button>
             <div class="demo-select-wrap">
               <select id="selectDemoBeat" class="studio-select" aria-label="اختيار إيقاع تجريبي">
-                <option value="">أو جرّب إيقاعاً جاهزاً...</option>
+                <option value="">إيقاع تجريبي...</option>
               </select>
             </div>
           </div>
@@ -1371,7 +1782,7 @@ kbd {
 
         <div class="track-wave-col">
           <canvas id="backingWaveCanvas" class="wave-canvas"></canvas>
-          <div class="wave-hint">اسحب وأفلت ملف MP3/WAV هنا أو انقر على الموجة للتنقل الزمني</div>
+          <div class="wave-hint">اسحب ملف MP3/WAV هنا، أو ألّف كوردات وآلات متوافقة مع غنائك من تبويب «التأليف الذكي»</div>
         </div>
       </div>
 
@@ -1381,7 +1792,7 @@ kbd {
           <div class="track-header">
             <span class="track-badge vocal">تراك 2</span>
             <h2 class="track-name">صوت الغناء (Vocals)</h2>
-            <button id="btnVocalFxToggle" class="fx-pill active" title="تفعيل أو إيقاف فلاتر الصوت">FX مفعّل</button>
+            <button id="btnVocalFxToggle" class="fx-pill active" title="تفعيل أو إيقاف جميع فلاتر الصوت">FX مفعّل</button>
           </div>
 
           <div class="mic-bar">
@@ -1396,7 +1807,7 @@ kbd {
           </div>
 
           <div class="track-actions">
-            <button id="btnUploadVocal" class="small-btn">استيراد صوت غناء</button>
+            <button id="btnUploadVocal" class="small-btn">استيراد غناء</button>
             <select id="selectVocalTake" class="studio-select" aria-label="اختيار محاولة التسجيل">
               <option value="-1">لا توجد تسجيلات بعد</option>
             </select>
@@ -1429,16 +1840,19 @@ kbd {
 
         <div class="track-wave-col">
           <canvas id="vocalWaveCanvas" class="wave-canvas"></canvas>
-          <div class="wave-hint">اضغط «تسجيل غناء» للغناء فوق الموسيقى أو اسحب ملف صوتك هنا</div>
+          <div class="wave-hint">يمكنك الغناء فوق الموسيقى أو «بدون موسيقى (أكابيلا)» مع المترونوم ثم تأليف الكوردات والآلات على صوتك</div>
         </div>
       </div>
     </section>
 
     <!-- Studio Workbench Tabs -->
     <section class="workbench-section">
-      <nav class="studio-tabs" role="tablist" aria-label="أقسام المعالجة الصوتية">
+      <nav class="studio-tabs" role="tablist" aria-label="أقسام المعالجة الصوتية والتأليف">
         <button id="tabBtnVocalFx" class="tab-btn active" role="tab" aria-selected="true" data-tab="vocal-fx">
-          فلاتر وتعديل صوت الغناء (Vocal FX)
+          فلاتر وإيفكتات الصوت (Vocal FX)
+        </button>
+        <button id="tabBtnComposer" class="tab-btn" role="tab" aria-selected="false" data-tab="composer">
+          تأليف الكوردات والآلات والإيقاع (التأليف الذكي)
         </button>
         <button id="tabBtnMastering" class="tab-btn" role="tab" aria-selected="false" data-tab="mastering">
           الميكس والماسترينج النهائي (Mastering)
@@ -1448,23 +1862,25 @@ kbd {
         </button>
       </nav>
 
-      <!-- TAB 1: VOCAL FX RACK -->
+      <!-- TAB 1: VOCAL FX & CREATIVE EFFECTS RACK -->
       <div id="panel-vocal-fx" class="tab-panel active" role="tabpanel">
-        <!-- Vocal Presets Strip -->
         <div class="presets-bar">
           <span class="presets-label">قوالب صوت جاهزة:</span>
           <div id="vocalPresetsGrid" class="presets-chips"></div>
         </div>
 
         <div class="fx-rack-grid">
-          <!-- Module 1: EQ & Tone Curve -->
+          <!-- Module 1: EQ & Cleanup -->
           <article class="rack-module span-2">
             <header class="module-head">
               <div>
                 <h3>معادل الترددات والعزل (EQ &amp; Cleanup)</h3>
                 <p>ضبط وضوح الصوت، الدفء، والهواء وإزالة الضوضاء المنخفضة وحدة حرف السين</p>
               </div>
-              <span class="module-tag mono">4-BAND EQ + HPF</span>
+              <div class="module-head-actions">
+                <span class="module-tag mono">4-BAND EQ + HPF</span>
+                <button id="btnToggleEq" class="fx-pill active">مفعّل</button>
+              </div>
             </header>
 
             <canvas id="eqCurveCanvas" class="eq-canvas"></canvas>
@@ -1506,17 +1922,118 @@ kbd {
             </div>
           </article>
 
-          <!-- Module 2: Vocal Compressor -->
+          <!-- Module 2: Creative Vocal Effects (Harmony, Flanger/Phaser, Lo-Fi Radio, Drive) -->
+          <article class="rack-module span-2">
+            <header class="module-head">
+              <div>
+                <h3>إيفكتات صوتية إبداعية وهارموني (Creative FX Rack)</h3>
+                <p>تحكم مستقل في تشغيل وضبط الهارموني الصوتي، الفلانجر/فيزر، تأثير الراديو والتليفون، والأوفر درايف</p>
+              </div>
+              <span class="module-tag mono">CREATIVE FX</span>
+            </header>
+
+            <div class="creative-fx-grid">
+              <!-- Vocal Harmony -->
+              <div class="sub-fx-box">
+                <div class="sub-fx-head">
+                  <strong>هارموني صوتي (Vocal Harmony)</strong>
+                  <button id="btnToggleHarmony" class="fx-pill">مطفأ</button>
+                </div>
+                <div class="sub-fx-row">
+                  <label for="fxHarmonyInterval">درجة الهارموني:</label>
+                  <select id="fxHarmonyInterval" class="studio-select">
+                    <option value="-12">أوكتاف منخفض (-12)</option>
+                    <option value="-5">خامسة منخفضة (-5)</option>
+                    <option value="3">ثالثة صغيرة (+3)</option>
+                    <option value="4">ثالثة كبيرة (+4)</option>
+                    <option value="7" selected>خامسة متناغمة (+7)</option>
+                    <option value="12">أوكتاف علوي (+12)</option>
+                  </select>
+                </div>
+                <div class="control-item">
+                  <div class="control-top"><label for="fxHarmonyMix">نسبة صوت الهارموني</label><span id="valFxHarmonyMix" class="mono">28%</span></div>
+                  <input id="fxHarmonyMix" type="range" min="0" max="100" step="1" value="28" />
+                </div>
+              </div>
+
+              <!-- Flanger / Phaser Modulation -->
+              <div class="sub-fx-box">
+                <div class="sub-fx-head">
+                  <strong>تمويج صوتي (Flanger / Phaser)</strong>
+                  <button id="btnToggleMod" class="fx-pill">مطفأ</button>
+                </div>
+                <div class="sub-fx-row">
+                  <label for="fxModType">النوع:</label>
+                  <select id="fxModType" class="studio-select">
+                    <option value="flanger" selected>فلانجر (Flanger)</option>
+                    <option value="phaser">فيزر (Phaser)</option>
+                  </select>
+                </div>
+                <div class="controls-grid cols-2 tight">
+                  <div class="control-item">
+                    <div class="control-top"><label for="fxModRate">السرعة</label><span id="valFxModRate" class="mono">0.6 Hz</span></div>
+                    <input id="fxModRate" type="range" min="0.1" max="5.0" step="0.1" value="0.6" />
+                  </div>
+                  <div class="control-item">
+                    <div class="control-top"><label for="fxModDepth">العمق</label><span id="valFxModDepth" class="mono">45%</span></div>
+                    <input id="fxModDepth" type="range" min="0" max="100" step="1" value="45" />
+                  </div>
+                  <div class="control-item span-2">
+                    <div class="control-top"><label for="fxModMix">نسبة الإيفكت (Mix)</label><span id="valFxModMix" class="mono">30%</span></div>
+                    <input id="fxModMix" type="range" min="0" max="100" step="1" value="30" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Lo-Fi Radio / Telephone / Megaphone -->
+              <div class="sub-fx-box">
+                <div class="sub-fx-head">
+                  <strong>فلتر راديو وتليفون (Lo-Fi / Radio)</strong>
+                  <button id="btnToggleLofi" class="fx-pill">مطفأ</button>
+                </div>
+                <div class="sub-fx-row">
+                  <label for="fxLofiStyle">الطابع:</label>
+                  <select id="fxLofiStyle" class="studio-select">
+                    <option value="radio" selected>راديو كلاسيكي (Vintage Radio)</option>
+                    <option value="telephone">مكالمة تليفون (Telephone)</option>
+                    <option value="megaphone">مكبر صوت (Megaphone)</option>
+                  </select>
+                </div>
+                <div class="control-item">
+                  <div class="control-top"><label for="fxLofiMix">قوة التأثير (Mix)</label><span id="valFxLofiMix" class="mono">75%</span></div>
+                  <input id="fxLofiMix" type="range" min="0" max="100" step="1" value="75" />
+                </div>
+              </div>
+
+              <!-- Vocal Overdrive / Grit -->
+              <div class="sub-fx-box">
+                <div class="sub-fx-head">
+                  <strong>أوفر درايف وخشونة (Vocal Drive)</strong>
+                  <button id="btnToggleDrive" class="fx-pill">مطفأ</button>
+                </div>
+                <p class="sub-fx-desc">يضيف قوة وخشونة غنائية مناسبة للراب والتراب والروك بدون تقطيع</p>
+                <div class="control-item">
+                  <div class="control-top"><label for="fxDriveAmount">شدة الدرايف (Drive)</label><span id="valFxDriveAmount" class="mono">25%</span></div>
+                  <input id="fxDriveAmount" type="range" min="0" max="100" step="1" value="25" />
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- Module 3: Vocal Compressor -->
           <article class="rack-module">
             <header class="module-head">
               <div>
                 <h3>ضاغط الصوت (Compressor)</h3>
                 <p>توحيد مستوى الغناء ومنع التفاوت الحاد بين الهمس والصوت العالي</p>
               </div>
-              <div class="gr-meter-wrap" title="مقدار الضغط الفعلي (Gain Reduction)">
-                <span class="mono gr-label">GR</span>
-                <div class="gr-bar-bg"><div id="vocalGrBar" class="gr-bar-fill"></div></div>
-                <span id="vocalGrVal" class="mono gr-num">0.0 dB</span>
+              <div class="module-head-actions">
+                <div class="gr-meter-wrap" title="مقدار الضغط الفعلي (Gain Reduction)">
+                  <span class="mono gr-label">GR</span>
+                  <div class="gr-bar-bg"><div id="vocalGrBar" class="gr-bar-fill"></div></div>
+                  <span id="vocalGrVal" class="mono gr-num">0.0 dB</span>
+                </div>
+                <button id="btnToggleComp" class="fx-pill active">مفعّل</button>
               </div>
             </header>
 
@@ -1544,14 +2061,17 @@ kbd {
             </div>
           </article>
 
-          <!-- Module 3: Space (Reverb, Delay, Stereo Doubler) -->
+          <!-- Module 4: Space (Reverb, Delay, Stereo Doubler) -->
           <article class="rack-module">
             <header class="module-head">
               <div>
-                <h3>الصدى والمكان والتوسيع (Reverb &amp; Delay)</h3>
-                <p>إضافة بُعد مكاني وصدى طربي وتوسيع ستيريو لصوت الغناء</p>
+                <h3>الصدى والتكرار والتوسيع (Reverb &amp; Delay)</h3>
+                <p>إضافة بُعد مكاني وصدى طربي وتوسيع ستيريو مع تحكم مستقل في كل مؤثر</p>
               </div>
-              <span class="module-tag mono">CONVOLUTION FX</span>
+              <div class="module-head-actions">
+                <button id="btnToggleReverb" class="fx-pill active">صدى مفعّل</button>
+                <button id="btnToggleDelay" class="fx-pill active">ديلاي مفعّل</button>
+              </div>
             </header>
 
             <div class="reverb-type-row">
@@ -1603,7 +2123,151 @@ kbd {
         </div>
       </div>
 
-      <!-- TAB 2: MASTERING SUITE -->
+      <!-- TAB 2: SMART CHORD COMPOSER, INSTRUMENTS & RHYTHMS -->
+      <div id="panel-composer" class="tab-panel" role="tabpanel">
+        <div class="composer-banner">
+          <div>
+            <h3>التأليف الذكي للكوردات والتآلفات الموسيقية (Auto-Composer)</h3>
+            <p>غنِّ بدون موسيقى (مع المترونوم أو حراً)، ثم اضغط «تحليل غنائي وتأليف الكوردات» ليقوم البرنامج باكتشاف طبقة صوتك والمقام وتأليف كوردات وآلات وإيقاع متوافق تماماً مع غنائك!</p>
+          </div>
+          <div class="composer-banner-actions">
+            <button id="btnAnalyzeVocal" class="primary-btn">
+              تحليل غنائي واقتراح الكوردات تلقائياً
+            </button>
+            <button id="btnGenerateArrangement" class="transport-btn play-btn accent-gen-btn">
+              توليد التوزيع وإضافته للتراك
+            </button>
+          </div>
+        </div>
+
+        <div class="fx-rack-grid">
+          <!-- Step 1: Key, Maqam & Progression Settings -->
+          <article class="rack-module span-2">
+            <header class="module-head">
+              <div>
+                <h3>الطبقة الموسيقية والمقام وخريطة الكوردات</h3>
+                <p>يُمكنك الاعتماد على التحليل التلقائي لصوتك أو اختيار المقام والطبقة وتعديل أي كورد يدوياً</p>
+              </div>
+              <span id="detectedKeyBadge" class="module-tag mono">جاهز للتحليل أو التأليف اليدوي</span>
+            </header>
+
+            <div class="composer-settings-row">
+              <div class="form-field">
+                <label for="compRootSelect">الطبقة / درجة الركوز (Key)</label>
+                <select id="compRootSelect" class="studio-select full">
+                  <option value="-1">تلقائي من صوت الغناء</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label for="compScaleSelect">المقام / السلم الموسيقي</label>
+                <select id="compScaleSelect" class="studio-select full">
+                  <option value="auto">تلقائي (يكتشفه من غنائك)</option>
+                  <option value="minor">نهاوند (Natural Minor)</option>
+                  <option value="major">عجم (Major)</option>
+                  <option value="hijaz">حجاز شرقي (Hijaz)</option>
+                  <option value="kurd">كرد (Kurd / Phrygian)</option>
+                  <option value="bayati">بياتي / دوري (Bayati Feel)</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label for="compPlayStyle">أسلوب العزف</label>
+                <select id="compPlayStyle" class="studio-select full"></select>
+              </div>
+              <div class="form-field">
+                <label for="compNumBars">عدد المازورات (في حالة التأليف قبل الغناء)</label>
+                <select id="compNumBars" class="studio-select full">
+                  <option value="4">4 مازورات</option>
+                  <option value="8" selected>8 مازورات</option>
+                  <option value="12">12 مازورة</option>
+                  <option value="16">16 مازورة</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="chords-header-row">
+              <span class="presets-label">خريطة الكوردات لكل مازورة (يمكنك تعديل أي كورد مباشرة):</span>
+              <button id="btnRebuildDefaultChords" class="small-btn">إعادة توليد كوردات المقام</button>
+            </div>
+            <div id="chordsTimelineGrid" class="chords-grid"></div>
+          </article>
+
+          <!-- Step 2: Instruments Selection & Mix -->
+          <article class="rack-module">
+            <header class="module-head">
+              <div>
+                <h3>الآلات الموسيقية المختارة (Instruments)</h3>
+                <p>فعّل الآلات التي تريدها واضبط مستوى كل آلة في التوزيع</p>
+              </div>
+              <span class="module-tag mono">6 INSTRUMENTS</span>
+            </header>
+
+            <div class="instruments-grid">
+              <div class="inst-card">
+                <label class="inst-check"><input id="instPianoOn" type="checkbox" checked /><span>بيانو (Grand Piano)</span></label>
+                <input id="instPianoVol" type="range" min="0" max="100" value="75" />
+                <span id="valInstPiano" class="mono val-tag-sm">75%</span>
+              </div>
+              <div class="inst-card">
+                <label class="inst-check"><input id="instGuitarOn" type="checkbox" /><span>جيتار (Acoustic Guitar)</span></label>
+                <input id="instGuitarVol" type="range" min="0" max="100" value="68" />
+                <span id="valInstGuitar" class="mono val-tag-sm">68%</span>
+              </div>
+              <div class="inst-card">
+                <label class="inst-check"><input id="instOudOn" type="checkbox" checked /><span>عود شرقي (Oriental Oud)</span></label>
+                <input id="instOudVol" type="range" min="0" max="100" value="70" />
+                <span id="valInstOud" class="mono val-tag-sm">70%</span>
+              </div>
+              <div class="inst-card">
+                <label class="inst-check"><input id="instStringsOn" type="checkbox" checked /><span>وتريات / كمانجات (Strings)</span></label>
+                <input id="instStringsVol" type="range" min="0" max="100" value="55" />
+                <span id="valInstStrings" class="mono val-tag-sm">55%</span>
+              </div>
+              <div class="inst-card">
+                <label class="inst-check"><input id="instBassOn" type="checkbox" checked /><span>باص عميق (Bass)</span></label>
+                <input id="instBassVol" type="range" min="0" max="100" value="78" />
+                <span id="valInstBass" class="mono val-tag-sm">78%</span>
+              </div>
+              <div class="inst-card">
+                <label class="inst-check"><input id="instSynthOn" type="checkbox" /><span>سينث عصري (Synth Pad)</span></label>
+                <input id="instSynthVol" type="range" min="0" max="100" value="58" />
+                <span id="valInstSynth" class="mono val-tag-sm">58%</span>
+              </div>
+            </div>
+          </article>
+
+          <!-- Step 3: Rhythm & Drum Generator -->
+          <article class="rack-module">
+            <header class="module-head">
+              <div>
+                <h3>الإيقاعات والطبول (Rhythm &amp; Drums)</h3>
+                <p>أضف إيقاعاً شرقياً أو غربياً متزامناً مع نفس سرعة المترونوم (<strong id="compBpmMirror" class="mono">100 BPM</strong>)</p>
+              </div>
+              <span class="module-tag mono">DRUM ENGINE</span>
+            </header>
+
+            <div class="export-form">
+              <div class="form-field">
+                <label for="compRhythmSelect">نوع الإيقاع</label>
+                <select id="compRhythmSelect" class="studio-select full"></select>
+              </div>
+
+              <div class="control-item">
+                <div class="control-top">
+                  <label for="compRhythmVol">مستوى صوت الإيقاع والطبول</label>
+                  <span id="valCompRhythmVol" class="mono">72%</span>
+                </div>
+                <input id="compRhythmVol" type="range" min="0" max="100" step="2" value="72" />
+              </div>
+
+              <button id="btnGenerateArrangementBottom" class="primary-btn large-btn">
+                تأليف وتوليد التوزيع الموسيقي وإضافته للتراك الآن
+              </button>
+            </div>
+          </article>
+        </div>
+      </div>
+
+      <!-- TAB 3: MASTERING SUITE -->
       <div id="panel-mastering" class="tab-panel" role="tabpanel">
         <div class="presets-bar">
           <span class="presets-label">قوالب الماسترينج:</span>
@@ -1612,7 +2276,6 @@ kbd {
         </div>
 
         <div class="fx-rack-grid">
-          <!-- Spectrum & Meters -->
           <article class="rack-module span-2">
             <header class="module-head">
               <div>
@@ -1631,7 +2294,6 @@ kbd {
             </div>
           </article>
 
-          <!-- Master Tone & Stereo Width -->
           <article class="rack-module">
             <header class="module-head">
               <div>
@@ -1660,7 +2322,6 @@ kbd {
             </div>
           </article>
 
-          <!-- Glue Compressor & Brickwall Limiter -->
           <article class="rack-module">
             <header class="module-head">
               <div>
@@ -1691,14 +2352,14 @@ kbd {
         </div>
       </div>
 
-      <!-- TAB 3: EXPORT MP3 / WAV -->
+      <!-- TAB 4: EXPORT MP3 / WAV -->
       <div id="panel-export" class="tab-panel" role="tabpanel">
         <div class="export-layout">
           <article class="rack-module">
             <header class="module-head">
               <div>
                 <h3>إعدادات استخراج الأغنية النهائية</h3>
-                <p>يتم تصيير كل الفلاتر والميكس والماستر بدقة 44.1 kHz ستيريو ثم الترميز مباشرة داخل المتصفح</p>
+                <p>يتم تصيير كل الفلاتر والإيفكتات والموسيقى المؤلّفة والماستر بدقة 44.1 kHz ستيريو ثم الترميز مباشرة داخل المتصفح</p>
               </div>
               <span class="module-tag mono">LAME MP3 ENGINE</span>
             </header>
@@ -1742,7 +2403,6 @@ kbd {
                 <span>بدء الميكس والماستر واستخراج الملف الآن</span>
               </button>
 
-              <!-- Progress Bar -->
               <div id="exportProgressBox" class="progress-box hidden">
                 <div class="progress-top">
                   <span id="exportProgressMsg">جاري التجهيز...</span>
@@ -1755,7 +2415,6 @@ kbd {
             </div>
           </article>
 
-          <!-- Export Result Preview -->
           <article class="rack-module export-result-card">
             <header class="module-head">
               <div>
@@ -1770,7 +2429,7 @@ kbd {
                 <circle cx="12" cy="12" r="10"/>
                 <polygon points="10 8 16 12 10 16 10 8"/>
               </svg>
-              <p>أضف الموسيقى وسجّل صوتك، ثم اضغط على زر الاستخراج لتجهيز ملف MP3 النهائي ومعاينته هنا.</p>
+              <p>سجّل غناءك (مع موسيقى أو بالتأليف الذكي)، ثم اضغط على زر الاستخراج لتجهيز ملف MP3 النهائي ومعاينته هنا.</p>
             </div>
 
             <div id="exportResultState" class="export-result hidden">
@@ -1805,8 +2464,8 @@ kbd {
     </section>
 
     <footer class="studio-footer">
-      <span>اختصارات لوحة المفاتيح: <kbd>Space</kbd> تشغيل/إيقاف • <kbd>R</kbd> تسجيل • <kbd>Home</kbd> البداية</span>
-      <span>نصيحة: استخدم سماعات الرأس أثناء التسجيل للحصول على أنقى صوت غناء بدون تداخل مع الموسيقى</span>
+      <span>اختصارات لوحة المفاتيح: <kbd>Space</kbd> تشغيل/إيقاف • <kbd>R</kbd> تسجيل • <kbd>T</kbd> تشغيل/كتم المترونوم • <kbd>Home</kbd> البداية</span>
+      <span>نصيحة: للغناء بدون موسيقى، شغّل المترونوم ثم اضغط «غناء بدون موسيقى»، وبعدها افتح «التأليف الذكي» لتوليد كوردات وآلات وإيقاع على صوتك</span>
     </footer>
   </div>
 
@@ -1832,9 +2491,15 @@ bitsperframe:             %d
 (() => {
 "use strict";
 /**
- * Nagham Studio — Vocal FX Presets, Mastering Presets, and Default DSP Parameters
+ * Nagham Studio — Vocal FX Presets, Mastering Presets, Metronome & Default DSP Parameters
  */
 const DEFAULT_MIX_STATE = {
+  metronome: {
+    enabled: false,       // Live metronome ON / MUTE toggle
+    bpm: 100,             // 50 - 180 BPM
+    beatsPerBar: 4,       // 4 (4/4), 3 (3/4), 6 (6/8)
+    volume: 0.65,         // 0.0 - 1.0
+  },
   backing: {
     volume: -2.0,     // dB (-60 to +6)
     pan: 0,           // -1 to 1
@@ -1852,6 +2517,12 @@ const DEFAULT_MIX_STATE = {
     duckingDb: 2.0,   // Auto-ducking of backing track during singing (0 to 6 dB)
   },
   vocalFx: {
+    // Per-module switches
+    eqEnabled: true,
+    compEnabled: true,
+    reverbEnabled: true,
+    delayEnabled: true,
+
     // High-Pass & Noise Gate
     hpfFreq: 85,          // Hz (20 - 300)
     gateThreshold: -52,   // dB (-80 = off, -60 to -20)
@@ -1887,6 +2558,27 @@ const DEFAULT_MIX_STATE = {
     delayTimeMs: 320,     // ms (60 to 800)
     delayFeedback: 28,    // 0 - 75%
     delayToneHz: 3200,    // Low-pass filter on echoes (800 - 10000 Hz)
+
+    // Creative FX: Vocal Harmony / Pitch Shift Layer
+    harmonyEnabled: false,
+    harmonyInterval: 7,   // Semitones: -12, -5, +3, +4, +7, +12
+    harmonyMix: 28,       // 0 - 100%
+
+    // Creative FX: Flanger / Phaser Modulation
+    modEnabled: false,
+    modType: 'flanger',   // 'flanger' | 'phaser'
+    modRate: 0.6,         // Hz (0.1 - 5.0)
+    modDepth: 45,         // 0 - 100%
+    modMix: 30,           // 0 - 100%
+
+    // Creative FX: Telephone / Radio / Megaphone Lo-Fi Filter
+    lofiEnabled: false,
+    lofiStyle: 'radio',   // 'telephone' | 'radio' | 'megaphone'
+    lofiMix: 75,          // 0 - 100%
+
+    // Creative FX: Vocal Drive / Overdrive Grit
+    driveEnabled: false,
+    driveAmount: 25,      // 0 - 100%
   },
   master: {
     enabled: true,
@@ -1900,6 +2592,26 @@ const DEFAULT_MIX_STATE = {
     masterVolume: 0.0,    // dB (-24 to +6)
   },
 };
+
+const CREATIVE_OFF = {
+  eqEnabled: true,
+  compEnabled: true,
+  reverbEnabled: true,
+  delayEnabled: true,
+  harmonyEnabled: false,
+  harmonyInterval: 7,
+  harmonyMix: 25,
+  modEnabled: false,
+  modType: 'flanger',
+  modRate: 0.6,
+  modDepth: 40,
+  modMix: 25,
+  lofiEnabled: false,
+  lofiStyle: 'radio',
+  lofiMix: 75,
+  driveEnabled: false,
+  driveAmount: 20,
+};
 const VOCAL_PRESETS = [
   {
     id: 'clean_studio',
@@ -1907,6 +2619,7 @@ const VOCAL_PRESETS = [
     subtitle: 'Clean Studio',
     description: 'وضوح احترافي، توازن دقيق، ولمسة صدى طبيعية',
     fx: {
+      ...CREATIVE_OFF,
       hpfFreq: 85,
       gateThreshold: -52,
       eqLow: -1.5,
@@ -1937,6 +2650,7 @@ const VOCAL_PRESETS = [
     subtitle: 'Oriental Tarab',
     description: 'دفء عميق مع صدى قاعة فخم وديلاي ناعم للعُرَب',
     fx: {
+      ...CREATIVE_OFF,
       hpfFreq: 75,
       gateThreshold: -55,
       eqLow: 0.5,
@@ -1965,8 +2679,9 @@ const VOCAL_PRESETS = [
     id: 'rap_punch',
     name: 'راب وهيب هوب',
     subtitle: 'Punchy Rap',
-    description: 'حضور قوي ومباشر مع ضغط حاد وصدى قصير جداً',
+    description: 'حضور قوي ومباشر مع ضغط حاد ولمسة أوفر درايف خفيفة',
     fx: {
+      ...CREATIVE_OFF,
       hpfFreq: 105,
       gateThreshold: -46,
       eqLow: -2.5,
@@ -1989,6 +2704,8 @@ const VOCAL_PRESETS = [
       delayTimeMs: 250,
       delayFeedback: 22,
       delayToneHz: 2600,
+      driveEnabled: true,
+      driveAmount: 18,
     },
   },
   {
@@ -1997,6 +2714,7 @@ const VOCAL_PRESETS = [
     subtitle: 'Modern Pop',
     description: 'لمعان عالي في الترددات العليا وتوسيع ستيريو جذاب',
     fx: {
+      ...CREATIVE_OFF,
       hpfFreq: 95,
       gateThreshold: -50,
       eqLow: -2.0,
@@ -2022,11 +2740,89 @@ const VOCAL_PRESETS = [
     },
   },
   {
+    id: 'harmony_choir',
+    name: 'هارموني وكورال',
+    subtitle: 'Harmony Choir',
+    description: 'صوت غناء ممتلئ مع طبقة هارموني متناغمة وصدى قاعة واسع',
+    fx: {
+      ...CREATIVE_OFF,
+      hpfFreq: 85,
+      gateThreshold: -52,
+      eqLow: -1.0,
+      eqWarmth: 1.2,
+      eqPresence: 2.8,
+      eqAir: 3.8,
+      deEsser: 35,
+      warmth: 24,
+      compThreshold: -21,
+      compRatio: 4.2,
+      compAttack: 10,
+      compRelease: 170,
+      compMakeup: 3.5,
+      doublerMix: 28,
+      reverbType: 'hall',
+      reverbMix: 30,
+      reverbDecay: 2.5,
+      reverbPreDelay: 30,
+      delayMix: 12,
+      delayTimeMs: 340,
+      delayFeedback: 26,
+      delayToneHz: 3400,
+      harmonyEnabled: true,
+      harmonyInterval: 7,
+      harmonyMix: 34,
+      modEnabled: true,
+      modType: 'phaser',
+      modRate: 0.35,
+      modDepth: 28,
+      modMix: 16,
+    },
+  },
+  {
+    id: 'vintage_lofi',
+    name: 'راديو / لو-فاي',
+    subtitle: 'Vintage Radio',
+    description: 'تأثير راديو وتليفون كلاسيكي دافئ مع صدى خفيف',
+    fx: {
+      ...CREATIVE_OFF,
+      hpfFreq: 160,
+      gateThreshold: -50,
+      eqLow: -4.0,
+      eqWarmth: 2.0,
+      eqPresence: 3.0,
+      eqAir: -3.5,
+      deEsser: 20,
+      warmth: 45,
+      compThreshold: -24,
+      compRatio: 5.5,
+      compAttack: 5,
+      compRelease: 110,
+      compMakeup: 4.5,
+      doublerMix: 6,
+      reverbType: 'room',
+      reverbMix: 16,
+      reverbDecay: 1.0,
+      reverbPreDelay: 12,
+      delayMix: 18,
+      delayTimeMs: 280,
+      delayFeedback: 30,
+      delayToneHz: 1800,
+      lofiEnabled: true,
+      lofiStyle: 'radio',
+      lofiMix: 85,
+      driveEnabled: true,
+      driveAmount: 24,
+    },
+  },
+  {
     id: 'broadcast_radio',
     name: 'إذاعي / بودكاست',
     subtitle: 'Warm Broadcast',
     description: 'صوت قريب ودافئ ومضغوط بوضوح فائق بدون صدى',
     fx: {
+      ...CREATIVE_OFF,
+      reverbEnabled: false,
+      delayEnabled: false,
       hpfFreq: 70,
       gateThreshold: -44,
       eqLow: 2.5,
@@ -2057,6 +2853,11 @@ const VOCAL_PRESETS = [
     subtitle: 'Flat / Raw',
     description: 'الصوت الأصلي المسجل بدون أي تعديل أو مؤثرات',
     fx: {
+      ...CREATIVE_OFF,
+      eqEnabled: false,
+      compEnabled: false,
+      reverbEnabled: false,
+      delayEnabled: false,
       hpfFreq: 20,
       gateThreshold: -80,
       eqLow: 0,
@@ -2166,7 +2967,8 @@ const DEMO_BEATS = [
 
 /**
  * Nagham Studio — Complete Web Audio DSP Engine, Multi-Track Recorder,
- * Built-in Beat Synthesizer, Offline Mixer/Masterer, and Real MP3/WAV Encoder
+ * Creative Vocal FX & Harmony Engine, Precision Metronome, Built-in Beat
+ * Synthesizer, Offline Mixer/Masterer, and Real MP3/WAV Encoder
  */
 function dbToGain(db) {
   if (db <= -60) return 0;
@@ -2190,15 +2992,14 @@ function createReverbIR(ctx, type = 'studio', decaySec = 1.6) {
   const buffer = ctx.createBuffer(2, length, sampleRate);
 
   const configs = {
-    room:      { damp: 0.45, density: 1.0, earlyCount: 10, earlySpread: 0.025, bright: 0.65 },
-    studio:    { damp: 0.35, density: 1.0, earlyCount: 14, earlySpread: 0.035, bright: 0.78 },
-    hall:      { damp: 0.25, density: 1.0, earlyCount: 18, earlySpread: 0.065, bright: 0.72 },
-    cathedral: { damp: 0.18, density: 1.0, earlyCount: 22, earlySpread: 0.095, bright: 0.62 },
-    plate:     { damp: 0.15, density: 1.2, earlyCount: 8,  earlySpread: 0.015, bright: 0.92 },
+    room:      { damp: 0.45, earlyCount: 10, earlySpread: 0.025, bright: 0.65 },
+    studio:    { damp: 0.35, earlyCount: 14, earlySpread: 0.035, bright: 0.78 },
+    hall:      { damp: 0.25, earlyCount: 18, earlySpread: 0.065, bright: 0.72 },
+    cathedral: { damp: 0.18, earlyCount: 22, earlySpread: 0.095, bright: 0.62 },
+    plate:     { damp: 0.15, earlyCount: 8,  earlySpread: 0.015, bright: 0.92 },
   };
   const cfg = configs[type] || configs.studio;
 
-  // Deterministic PRNG for consistent reverb character between live & offline renders
   let seed = 1337 + type.length * 97 + Math.round(decaySec * 100);
   const rand = () => {
     seed = (seed * 16807) % 2147483647;
@@ -2212,17 +3013,14 @@ function createReverbIR(ctx, type = 'studio', decaySec = 1.6) {
 
     for (let i = 0; i < length; i++) {
       const t = i / length;
-      // Exponential tail with slight early attack bloom
       const attack = Math.min(1, i / (sampleRate * 0.008));
       const env = attack * Math.pow(1 - t, 2.2 + cfg.damp * 2.5);
       const raw = rand();
-      // Simple one-pole lowpass damping that increases over time
       const dynamicAlpha = Math.max(0.08, lpAlpha * (1 - t * 0.65));
       lpState = lpState + dynamicAlpha * (raw - lpState);
       data[i] = lpState * env * 0.55;
     }
 
-    // Add distinct early reflections for realistic room dimension
     for (let r = 0; r < cfg.earlyCount; r++) {
       const delaySec = 0.004 + (r / cfg.earlyCount) * cfg.earlySpread + (ch === 1 ? 0.0017 : 0);
       const idx = Math.floor(delaySec * sampleRate);
@@ -2251,9 +3049,28 @@ function createWarmthCurve(amountPercent) {
   const norm = Math.tanh(k);
   for (let i = 0; i < n; i++) {
     const x = (i * 2) / (n - 1) - 1;
-    // Slight even-order harmonic asymmetry for warm tube character
     const shaped = (Math.tanh(k * (x + 0.04 * drive)) - Math.tanh(0.04 * drive * k)) / norm;
     curve[i] = x * (1 - drive * 0.65) + shaped * (drive * 0.65);
+  }
+  return curve;
+}
+
+/**
+ * Create a musical vocal Overdrive / Grit WaveShaper curve.
+ */
+function createOverdriveCurve(amountPercent) {
+  const n = 2048;
+  const curve = new Float32Array(n);
+  const amt = clamp(amountPercent, 0, 100) / 100;
+  if (amt <= 0.001) {
+    for (let i = 0; i < n; i++) curve[i] = (i * 2) / (n - 1) - 1;
+    return curve;
+  }
+  const k = 2 + amt * 18;
+  const norm = Math.tanh(k);
+  for (let i = 0; i < n; i++) {
+    const x = (i * 2) / (n - 1) - 1;
+    curve[i] = Math.tanh(k * x) / norm;
   }
   return curve;
 }
@@ -2283,7 +3100,6 @@ function createLimiterClipperCurve(ceilingDb) {
 
 /**
  * Non-destructive envelope-based Noise Gate for vocal buffers.
- * Reduces room noise between sung phrases smoothly without clicks.
  */
 function applyNoiseGate(ctx, srcBuffer, thresholdDb) {
   if (!srcBuffer || thresholdDb <= -78) return srcBuffer;
@@ -2294,7 +3110,7 @@ function applyNoiseGate(ctx, srcBuffer, thresholdDb) {
   const out = ctx.createBuffer(numCh, len, sr);
 
   const threshLin = dbToGain(thresholdDb);
-  const floorGain = dbToGain(-34); // Soft musical floor instead of harsh dead cut
+  const floorGain = dbToGain(-34);
   const attackCoeff = Math.exp(-1 / (sr * 0.006));
   const releaseCoeff = Math.exp(-1 / (sr * 0.11));
   const envCoeff = Math.exp(-1 / (sr * 0.012));
@@ -2334,6 +3150,92 @@ function applyNoiseGate(ctx, srcBuffer, thresholdDb) {
 }
 
 /**
+ * Time-preserving WSOLA (Waveform-Similarity Overlap-Add) granular pitch shifter
+ * for creating clean, phase-coherent vocal harmonies (octave, fifth, third).
+ */
+function createPitchShiftedHarmonyBuffer(ctx, srcBuffer, semitones = 7) {
+  if (!srcBuffer || semitones === 0) return srcBuffer;
+
+  const sr = srcBuffer.sampleRate;
+  const len = srcBuffer.length;
+  const pitchFactor = Math.pow(2, semitones / 12);
+
+  const input = srcBuffer.getChannelData(0);
+  const out = ctx.createBuffer(2, len, sr);
+  const outL = out.getChannelData(0);
+  const outR = out.getChannelData(1);
+
+  const grainSize = 2048;
+  const hop = 1024; // 2x Hann overlap sums to exact 1.0
+  const win = new Float32Array(grainSize);
+  for (let i = 0; i < grainSize; i++) {
+    win[i] = 0.5 * (1 - Math.cos((2 * Math.PI * i) / (grainSize - 1)));
+  }
+
+  const readSample = (pos) => {
+    const i0 = Math.floor(pos);
+    if (i0 < 0 || i0 + 1 >= len) return 0;
+    const frac = pos - i0;
+    return input[i0] * (1 - frac) + input[i0 + 1] * frac;
+  };
+
+  const searchRadius = Math.min(260, Math.floor(sr / 150));
+  const matchLen = 256;
+
+  for (let outStart = 0; outStart < len; outStart += hop) {
+    let bestOffset = 0;
+
+    // Phase-align new grain against already synthesized overlap tail (WSOLA)
+    if (outStart > 0) {
+      let bestScore = -Infinity;
+      const maxSearch = Math.min(searchRadius, Math.floor(len - outStart - grainSize * pitchFactor));
+      const minSearch = Math.max(-searchRadius, -outStart);
+
+      for (let d = minSearch; d <= maxSearch; d += 4) {
+        let corr = 0;
+        for (let m = 0; m < matchLen; m += 4) {
+          const dstIdx = outStart + m;
+          if (dstIdx >= len) break;
+          corr += outL[dstIdx] * readSample(outStart + d + m * pitchFactor);
+        }
+        if (corr > bestScore) {
+          bestScore = corr;
+          bestOffset = d;
+        }
+      }
+      // Fine refinement around best coarse offset
+      const refineStart = Math.max(minSearch, bestOffset - 3);
+      const refineEnd = Math.min(maxSearch, bestOffset + 3);
+      for (let d = refineStart; d <= refineEnd; d++) {
+        let corr = 0;
+        for (let m = 0; m < matchLen; m += 2) {
+          const dstIdx = outStart + m;
+          if (dstIdx >= len) break;
+          corr += outL[dstIdx] * readSample(outStart + d + m * pitchFactor);
+        }
+        if (corr > bestScore) {
+          bestScore = corr;
+          bestOffset = d;
+        }
+      }
+    }
+
+    const baseSrc = outStart + bestOffset;
+    for (let i = 0; i < grainSize; i++) {
+      const dstIdx = outStart + i;
+      if (dstIdx >= len) break;
+      const s = readSample(baseSrc + i * pitchFactor) * win[i];
+      outL[dstIdx] += s;
+      // Slight stereo Haas spread (~9 ms) on right channel for lush harmony width
+      const dstR = dstIdx + 400;
+      if (dstR < len) outR[dstR] += s;
+    }
+  }
+
+  return out;
+}
+
+/**
  * Compute a smooth ducking gain curve for the backing track based on vocal activity.
  */
 function computeAutoDuckingCurve(vocalBuffer, duckingDb, totalDuration, syncOffsetSec = 0, stepSec = 0.05) {
@@ -2363,65 +3265,123 @@ function computeAutoDuckingCurve(vocalBuffer, duckingDb, totalDuration, syncOffs
       }
     }
     const vocalDb = gainToDb(rms);
-    // Map vocal level between -42 dB and -18 dB smoothly to ducking gain
     const activity = clamp((vocalDb - (-42)) / 24, 0, 1);
     const target = 1.0 - activity * (1.0 - minGain);
-    const alpha = target < smoothGain ? 0.45 : 0.16; // Fast attack, gentle release
+    const alpha = target < smoothGain ? 0.45 : 0.16;
     smoothGain = smoothGain + alpha * (target - smoothGain);
     curve[s] = smoothGain;
   }
   return curve;
 }
 
+function getLofiFilterSpec(style) {
+  if (style === 'telephone') return { hp: 460, lp: 2600, peakFreq: 1450, peakGain: 5.5, peakQ: 1.8 };
+  if (style === 'megaphone') return { hp: 620, lp: 3800, peakFreq: 1900, peakGain: 8.5, peakQ: 2.2 };
+  return { hp: 280, lp: 3500, peakFreq: 1150, peakGain: 3.5, peakQ: 1.2 }; // vintage radio
+}
+
 /**
  * Build the complete Vocal FX Audio Graph inside either live AudioContext or OfflineAudioContext.
+ * Supports per-module bypass toggles and all creative vocal effects.
  */
 function buildVocalFxChain(ctx, state, reverbIR) {
   const fx = state.vocalFx;
   const input = ctx.createGain();
+  const eqOn = fx.eqEnabled !== false;
 
   // 1. High-Pass Filter
   const hpf = ctx.createBiquadFilter();
   hpf.type = 'highpass';
-  hpf.frequency.value = fx.hpfFreq;
+  hpf.frequency.value = eqOn ? fx.hpfFreq : 20;
   hpf.Q.value = 0.707;
 
   // 2. 4-Band Vocal EQ
   const eqLow = ctx.createBiquadFilter();
   eqLow.type = 'lowshelf';
   eqLow.frequency.value = 100;
-  eqLow.gain.value = fx.eqLow;
+  eqLow.gain.value = eqOn ? fx.eqLow : 0;
 
   const eqWarmth = ctx.createBiquadFilter();
   eqWarmth.type = 'peaking';
   eqWarmth.frequency.value = 380;
   eqWarmth.Q.value = 1.0;
-  eqWarmth.gain.value = fx.eqWarmth;
+  eqWarmth.gain.value = eqOn ? fx.eqWarmth : 0;
 
   const eqPresence = ctx.createBiquadFilter();
   eqPresence.type = 'peaking';
   eqPresence.frequency.value = 3200;
   eqPresence.Q.value = 1.2;
-  eqPresence.gain.value = fx.eqPresence;
+  eqPresence.gain.value = eqOn ? fx.eqPresence : 0;
 
   const eqAir = ctx.createBiquadFilter();
   eqAir.type = 'highshelf';
   eqAir.frequency.value = 10000;
-  eqAir.gain.value = fx.eqAir;
+  eqAir.gain.value = eqOn ? fx.eqAir : 0;
 
-  // 3. De-Esser (targeted sibilance attenuation at 6.8 kHz)
+  // 3. De-Esser
   const deEsser = ctx.createBiquadFilter();
   deEsser.type = 'peaking';
   deEsser.frequency.value = 6800;
   deEsser.Q.value = 2.8;
-  deEsser.gain.value = -(fx.deEsser / 100) * 11;
+  deEsser.gain.value = eqOn ? -(fx.deEsser / 100) * 11 : 0;
 
   // 4. Analog Tube Warmth
   const warmth = ctx.createWaveShaper();
-  warmth.curve = createWarmthCurve(fx.warmth);
+  warmth.curve = createWarmthCurve(eqOn ? fx.warmth : 0);
   warmth.oversample = '4x';
 
-  // 5. Compressor + Makeup Gain
+  // 5. Vocal Drive / Overdrive (with bypassable blend)
+  const driveShaper = ctx.createWaveShaper();
+  driveShaper.curve = createOverdriveCurve(fx.driveAmount || 0);
+  driveShaper.oversample = '4x';
+  const driveTone = ctx.createBiquadFilter();
+  driveTone.type = 'lowpass';
+  driveTone.frequency.value = 5400;
+  const driveWet = ctx.createGain();
+  const driveDry = ctx.createGain();
+  const driveSum = ctx.createGain();
+  const driveAmt = fx.driveEnabled ? clamp((fx.driveAmount || 0) / 100, 0, 1) * 0.72 : 0;
+  driveWet.gain.value = driveAmt;
+  driveDry.gain.value = 1 - driveAmt * 0.55;
+
+  warmth.connect(driveDry);
+  driveDry.connect(driveSum);
+  warmth.connect(driveShaper);
+  driveShaper.connect(driveTone);
+  driveTone.connect(driveWet);
+  driveWet.connect(driveSum);
+
+  // 6. Lo-Fi / Telephone / Radio / Megaphone Filter (parallel wet/dry)
+  const lofiSpec = getLofiFilterSpec(fx.lofiStyle);
+  const lofiHp = ctx.createBiquadFilter();
+  lofiHp.type = 'highpass';
+  lofiHp.frequency.value = lofiSpec.hp;
+  const lofiLp = ctx.createBiquadFilter();
+  lofiLp.type = 'lowpass';
+  lofiLp.frequency.value = lofiSpec.lp;
+  const lofiPeak = ctx.createBiquadFilter();
+  lofiPeak.type = 'peaking';
+  lofiPeak.frequency.value = lofiSpec.peakFreq;
+  lofiPeak.Q.value = lofiSpec.peakQ;
+  lofiPeak.gain.value = lofiSpec.peakGain;
+
+  const lofiDry = ctx.createGain();
+  const lofiWet = ctx.createGain();
+  const lofiSum = ctx.createGain();
+  const lofiRatio = fx.lofiEnabled ? clamp((fx.lofiMix || 0) / 100, 0, 1) : 0;
+  lofiWet.gain.value = lofiRatio;
+  lofiDry.gain.value = 1 - lofiRatio;
+
+  driveSum.connect(lofiDry);
+  lofiDry.connect(lofiSum);
+  driveSum.connect(lofiHp);
+  lofiHp.connect(lofiLp);
+  lofiLp.connect(lofiPeak);
+  lofiPeak.connect(lofiWet);
+  lofiWet.connect(lofiSum);
+
+  // 7. Compressor + Makeup Gain (with per-module toggle)
+  const compOn = fx.compEnabled !== false;
   const comp = ctx.createDynamicsCompressor();
   comp.threshold.value = fx.compThreshold;
   comp.knee.value = 8;
@@ -2432,7 +3392,13 @@ function buildVocalFxChain(ctx, state, reverbIR) {
   const compMakeup = ctx.createGain();
   compMakeup.gain.value = dbToGain(fx.compMakeup);
 
-  // Connect serial vocal strip
+  const compActiveGain = ctx.createGain();
+  const compBypassGain = ctx.createGain();
+  const postComp = ctx.createGain();
+  compActiveGain.gain.value = compOn ? 1 : 0;
+  compBypassGain.gain.value = compOn ? 0 : 1;
+
+  // Wire serial vocal strip
   input.connect(hpf);
   hpf.connect(eqLow);
   eqLow.connect(eqWarmth);
@@ -2440,17 +3406,69 @@ function buildVocalFxChain(ctx, state, reverbIR) {
   eqPresence.connect(eqAir);
   eqAir.connect(deEsser);
   deEsser.connect(warmth);
-  warmth.connect(comp);
+
+  lofiSum.connect(comp);
   comp.connect(compMakeup);
+  compMakeup.connect(compActiveGain);
+  compActiveGain.connect(postComp);
+  lofiSum.connect(compBypassGain);
+  compBypassGain.connect(postComp);
+
+  // 8. Flanger / Phaser Modulation FX (parallel wet/dry)
+  const modLfo = ctx.createOscillator();
+  modLfo.type = 'sine';
+  modLfo.frequency.value = fx.modRate || 0.6;
+
+  // Flanger branch
+  const flangerDelay = ctx.createDelay(0.05);
+  flangerDelay.delayTime.value = 0.006;
+  const flangerDepth = ctx.createGain();
+  flangerDepth.gain.value = ((fx.modDepth || 40) / 100) * 0.0045;
+  const flangerFb = ctx.createGain();
+  flangerFb.gain.value = 0.35;
+  const flangerWet = ctx.createGain();
+
+  modLfo.connect(flangerDepth);
+  flangerDepth.connect(flangerDelay.delayTime);
+  postComp.connect(flangerDelay);
+  flangerDelay.connect(flangerFb);
+  flangerFb.connect(flangerDelay);
+  flangerDelay.connect(flangerWet);
+
+  // Phaser branch (3 cascaded Allpass filters swept by LFO)
+  const phaserAp1 = ctx.createBiquadFilter(); phaserAp1.type = 'allpass'; phaserAp1.frequency.value = 900; phaserAp1.Q.value = 1.6;
+  const phaserAp2 = ctx.createBiquadFilter(); phaserAp2.type = 'allpass'; phaserAp2.frequency.value = 1600; phaserAp2.Q.value = 1.6;
+  const phaserAp3 = ctx.createBiquadFilter(); phaserAp3.type = 'allpass'; phaserAp3.frequency.value = 2600; phaserAp3.Q.value = 1.6;
+  const phaserDepth = ctx.createGain();
+  phaserDepth.gain.value = ((fx.modDepth || 40) / 100) * 700;
+  const phaserWet = ctx.createGain();
+
+  modLfo.connect(phaserDepth);
+  phaserDepth.connect(phaserAp1.frequency);
+  phaserDepth.connect(phaserAp2.frequency);
+  phaserDepth.connect(phaserAp3.frequency);
+
+  postComp.connect(phaserAp1);
+  phaserAp1.connect(phaserAp2);
+  phaserAp2.connect(phaserAp3);
+  phaserAp3.connect(phaserWet);
+
+  modLfo.start(0);
+
+  const modMixRatio = fx.modEnabled ? clamp((fx.modMix || 0) / 100, 0, 1) * 0.72 : 0;
+  flangerWet.gain.value = fx.modType === 'flanger' ? modMixRatio : 0;
+  phaserWet.gain.value = fx.modType === 'phaser' ? modMixRatio : 0;
 
   // Post-dynamics bus (Dry + Parallel FX)
   const fxSum = ctx.createGain();
   const dryGain = ctx.createGain();
   dryGain.gain.value = 1.0;
-  compMakeup.connect(dryGain);
+  postComp.connect(dryGain);
   dryGain.connect(fxSum);
+  flangerWet.connect(fxSum);
+  phaserWet.connect(fxSum);
 
-  // 6. Stereo Doubler / Chorus (subtle L/R modulated Haas width)
+  // 9. Stereo Doubler / Chorus
   const doublerWet = ctx.createGain();
   doublerWet.gain.value = (fx.doublerMix / 100) * 0.45;
   const dblDelayL = ctx.createDelay(0.1);
@@ -2478,28 +3496,30 @@ function buildVocalFxChain(ctx, state, reverbIR) {
   dblPanL.pan.value = -0.82;
   dblPanR.pan.value = 0.82;
 
-  compMakeup.connect(dblDelayL);
-  compMakeup.connect(dblDelayR);
+  postComp.connect(dblDelayL);
+  postComp.connect(dblDelayR);
   dblDelayL.connect(dblPanL);
   dblDelayR.connect(dblPanR);
   dblPanL.connect(doublerWet);
   dblPanR.connect(doublerWet);
   doublerWet.connect(fxSum);
 
-  // 7. Convolution Reverb Send
+  // 10. Convolution Reverb Send (with toggle)
+  const revOn = fx.reverbEnabled !== false;
   const revPreDelay = ctx.createDelay(0.25);
   revPreDelay.delayTime.value = fx.reverbPreDelay / 1000;
   const convolver = ctx.createConvolver();
   convolver.buffer = reverbIR || createReverbIR(ctx, fx.reverbType, fx.reverbDecay);
   const revWet = ctx.createGain();
-  revWet.gain.value = (fx.reverbMix / 100) * 0.95;
+  revWet.gain.value = revOn ? (fx.reverbMix / 100) * 0.95 : 0;
 
-  compMakeup.connect(revPreDelay);
+  postComp.connect(revPreDelay);
   revPreDelay.connect(convolver);
   convolver.connect(revWet);
   revWet.connect(fxSum);
 
-  // 8. Stereo Warm Delay Send
+  // 11. Stereo Warm Delay Send (with toggle)
+  const delOn = fx.delayEnabled !== false;
   const delayNode = ctx.createDelay(1.2);
   delayNode.delayTime.value = fx.delayTimeMs / 1000;
   const delayTone = ctx.createBiquadFilter();
@@ -2508,16 +3528,22 @@ function buildVocalFxChain(ctx, state, reverbIR) {
   const delayFeedback = ctx.createGain();
   delayFeedback.gain.value = clamp(fx.delayFeedback / 100, 0, 0.78);
   const delayWet = ctx.createGain();
-  delayWet.gain.value = (fx.delayMix / 100) * 0.75;
+  delayWet.gain.value = delOn ? (fx.delayMix / 100) * 0.75 : 0;
 
-  compMakeup.connect(delayNode);
+  postComp.connect(delayNode);
   delayNode.connect(delayTone);
   delayTone.connect(delayFeedback);
   delayFeedback.connect(delayNode);
   delayTone.connect(delayWet);
   delayWet.connect(fxSum);
 
-  // Bypass switching node
+  // Optional Harmony Input (feeds into Reverb + fxSum for cohesive choir blend)
+  const harmonyInput = ctx.createGain();
+  harmonyInput.gain.value = fx.harmonyEnabled ? clamp((fx.harmonyMix || 0) / 100, 0, 1) * 0.85 : 0;
+  harmonyInput.connect(fxSum);
+  harmonyInput.connect(revPreDelay);
+
+  // Master Vocal FX Bypass switching node
   const bypassGain = ctx.createGain();
   const activeGain = ctx.createGain();
   const output = ctx.createGain();
@@ -2533,16 +3559,22 @@ function buildVocalFxChain(ctx, state, reverbIR) {
 
   return {
     input,
+    harmonyInput,
     output,
     nodes: {
       hpf, eqLow, eqWarmth, eqPresence, eqAir, deEsser, warmth,
-      comp, compMakeup, doublerWet, revPreDelay, convolver, revWet,
+      driveShaper, driveWet, driveDry,
+      lofiHp, lofiLp, lofiPeak, lofiWet, lofiDry,
+      comp, compMakeup, compActiveGain, compBypassGain,
+      modLfo, flangerDepth, flangerWet, phaserDepth, phaserWet,
+      doublerWet, revPreDelay, convolver, revWet,
       delayNode, delayTone, delayFeedback, delayWet,
-      activeGain, bypassGain, dblLfoL, dblLfoR,
+      harmonyInput, activeGain, bypassGain, dblLfoL, dblLfoR,
     },
     stopOscillators() {
       try { dblLfoL.stop(); } catch {}
       try { dblLfoR.stop(); } catch {}
+      try { modLfo.stop(); } catch {}
     },
   };
 }
@@ -2555,7 +3587,6 @@ function buildMasterChain(ctx, state) {
   const m = state.master;
   const input = ctx.createGain();
 
-  // 1. Master 3-Band EQ
   const eqLow = ctx.createBiquadFilter();
   eqLow.type = 'lowshelf';
   eqLow.frequency.value = 80;
@@ -2572,22 +3603,19 @@ function buildMasterChain(ctx, state) {
   eqHigh.frequency.value = 11000;
   eqHigh.gain.value = m.eqHigh;
 
-  // 2. True Mid/Side Stereo Widener
+  // True Mid/Side Stereo Widener
   const splitter = ctx.createChannelSplitter(2);
   const merger = ctx.createChannelMerger(2);
 
-  // Mid = 0.5*L + 0.5*R
   const midL = ctx.createGain(); midL.gain.value = 0.5;
   const midR = ctx.createGain(); midR.gain.value = 0.5;
   const midBus = ctx.createGain();
 
-  // Side = 0.5*L - 0.5*R
   const sideL = ctx.createGain(); sideL.gain.value = 0.5;
   const sideR = ctx.createGain(); sideR.gain.value = -0.5;
   const sideWidthGain = ctx.createGain();
   sideWidthGain.gain.value = m.stereoWidth / 100;
 
-  // Decode: OutL = Mid + Side, OutR = Mid - Side
   const sideInv = ctx.createGain();
   sideInv.gain.value = -1;
 
@@ -2607,7 +3635,7 @@ function buildMasterChain(ctx, state) {
   midBus.connect(merger, 0, 1);
   sideInv.connect(merger, 0, 1);
 
-  // 3. Glue Bus Compressor
+  // Glue Bus Compressor
   const glueRatio = 1 + (m.glueAmount / 100) * 2.5;
   const glueThresh = -(m.glueAmount / 100) * 18;
   const glueComp = ctx.createDynamicsCompressor();
@@ -2620,7 +3648,7 @@ function buildMasterChain(ctx, state) {
   const glueMakeup = ctx.createGain();
   glueMakeup.gain.value = dbToGain((m.glueAmount / 100) * 2.2);
 
-  // 4. Maximizer / Brickwall Limiter
+  // Maximizer / Brickwall Limiter
   const limiterDrive = ctx.createGain();
   limiterDrive.gain.value = dbToGain(m.limiterDrive);
 
@@ -2635,7 +3663,6 @@ function buildMasterChain(ctx, state) {
   limiterClipper.curve = createLimiterClipperCurve(m.limiterCeiling);
   limiterClipper.oversample = '4x';
 
-  // Wire Mastering Chain
   input.connect(eqLow);
   eqLow.connect(eqMid);
   eqMid.connect(eqHigh);
@@ -2646,7 +3673,6 @@ function buildMasterChain(ctx, state) {
   limiterDrive.connect(limiterComp);
   limiterComp.connect(limiterClipper);
 
-  // Master Bypass & Master Volume
   const activeGain = ctx.createGain();
   const bypassGain = ctx.createGain();
   const masterVol = ctx.createGain();
@@ -2673,7 +3699,6 @@ function buildMasterChain(ctx, state) {
 
 /**
  * Encode a Stereo AudioBuffer into a genuine MP3 Blob using lamejs.
- * Processes asynchronously in chunks to keep the browser UI responsive.
  */
 async function encodeAudioBufferToMp3(audioBuffer, bitrateKbps = 192, onProgress = null) {
   const lame = window.lamejs;
@@ -2754,7 +3779,7 @@ function encodeAudioBufferToWav(audioBuffer) {
   writeStr(8, 'WAVE');
   writeStr(12, 'fmt ');
   view.setUint32(16, 16, true);
-  view.setUint16(20, 1, true); // PCM
+  view.setUint16(20, 1, true);
   view.setUint16(22, numChannels, true);
   view.setUint32(24, sampleRate, true);
   view.setUint32(28, sampleRate * numChannels * bytesPerSample, true);
@@ -2780,10 +3805,6 @@ function encodeAudioBufferToWav(audioBuffer) {
 
   return new Blob([buffer], { type: 'audio/wav' });
 }
-
-/**
- * Normalize an AudioBuffer in place to a target peak dBFS (e.g. -0.5 dB).
- */
 function normalizeBuffer(audioBuffer, targetPeakDb = -0.5) {
   let maxPeak = 0;
   for (let ch = 0; ch < audioBuffer.numberOfChannels; ch++) {
@@ -2802,10 +3823,6 @@ function normalizeBuffer(audioBuffer, targetPeakDb = -0.5) {
     }
   }
 }
-
-/**
- * Analyze peak dBFS and approximate integrated loudness (LUFS proxy) of a rendered buffer.
- */
 function analyzeLoudness(audioBuffer) {
   let peak = 0;
   let sumSq = 0;
@@ -2828,8 +3845,7 @@ function analyzeLoudness(audioBuffer) {
 }
 
 /**
- * Synthesize a musical built-in backing track AudioBuffer so users can record
- * and test mixing immediately even without uploading an external MP3.
+ * Synthesize a musical built-in backing track AudioBuffer.
  */
 async function synthesizeDemoBeat(beatId = 'oriental_groove') {
   const sr = 44100;
@@ -2857,10 +3873,8 @@ async function synthesizeDemoBeat(beatId = 'oriental_groove') {
     osc.frequency.exponentialRampToValueAtTime(42, time + 0.14);
     g.gain.setValueAtTime(punch, time);
     g.gain.exponentialRampToValueAtTime(0.001, time + 0.28);
-    osc.connect(g);
-    g.connect(master);
-    osc.start(time);
-    osc.stop(time + 0.3);
+    osc.connect(g); g.connect(master);
+    osc.start(time); osc.stop(time + 0.3);
   };
 
   const playPerc = (time, freq = 950, decay = 0.09, gainVal = 0.25) => {
@@ -2878,50 +3892,31 @@ async function synthesizeDemoBeat(beatId = 'oriental_groove') {
     bp.Q.value = 1.6;
     const g = off.createGain();
     g.gain.value = gainVal;
-    src.connect(bp);
-    bp.connect(g);
-    g.connect(master);
-    g.connect(revSend);
+    src.connect(bp); bp.connect(g); g.connect(master); g.connect(revSend);
     src.start(time);
   };
 
   const playPluck = (time, midi, dur = 0.65, vol = 0.22, panVal = 0) => {
     const osc1 = off.createOscillator();
     const osc2 = off.createOscillator();
-    osc1.type = 'triangle';
-    osc2.type = 'sawtooth';
+    osc1.type = 'triangle'; osc2.type = 'sawtooth';
     const f = midiToFreq(midi);
     osc1.frequency.setValueAtTime(f, time);
     osc2.frequency.setValueAtTime(f * 2, time);
-
     const lp = off.createBiquadFilter();
     lp.type = 'lowpass';
     lp.frequency.setValueAtTime(2800, time);
     lp.frequency.exponentialRampToValueAtTime(520, time + dur);
-
     const g = off.createGain();
     g.gain.setValueAtTime(0.001, time);
     g.gain.linearRampToValueAtTime(vol, time + 0.012);
     g.gain.exponentialRampToValueAtTime(0.001, time + dur);
-
-    const pan = off.createStereoPanner();
-    pan.pan.value = panVal;
-
-    const mix2 = off.createGain();
-    mix2.gain.value = 0.28;
-
-    osc1.connect(lp);
-    osc2.connect(mix2);
-    mix2.connect(lp);
-    lp.connect(g);
-    g.connect(pan);
-    pan.connect(master);
-    pan.connect(revSend);
-
-    osc1.start(time);
-    osc2.start(time);
-    osc1.stop(time + dur + 0.05);
-    osc2.stop(time + dur + 0.05);
+    const pan = off.createStereoPanner(); pan.pan.value = panVal;
+    const mix2 = off.createGain(); mix2.gain.value = 0.28;
+    osc1.connect(lp); osc2.connect(mix2); mix2.connect(lp);
+    lp.connect(g); g.connect(pan); pan.connect(master); pan.connect(revSend);
+    osc1.start(time); osc2.start(time);
+    osc1.stop(time + dur + 0.05); osc2.stop(time + dur + 0.05);
   };
 
   const playPadChord = (time, midis, dur, vol = 0.14) => {
@@ -2929,10 +3924,9 @@ async function synthesizeDemoBeat(beatId = 'oriental_groove') {
       const osc = off.createOscillator();
       osc.type = 'triangle';
       osc.frequency.setValueAtTime(midiToFreq(m), time);
-      osc.detune.value = (idx % 2 === 0 ? -5 : 5);
+      osc.detune.value = idx % 2 === 0 ? -5 : 5;
       const lp = off.createBiquadFilter();
-      lp.type = 'lowpass';
-      lp.frequency.value = 1400;
+      lp.type = 'lowpass'; lp.frequency.value = 1400;
       const g = off.createGain();
       g.gain.setValueAtTime(0.001, time);
       g.gain.linearRampToValueAtTime(vol / midis.length, time + 0.18);
@@ -2940,49 +3934,34 @@ async function synthesizeDemoBeat(beatId = 'oriental_groove') {
       g.gain.exponentialRampToValueAtTime(0.001, time + dur);
       const pan = off.createStereoPanner();
       pan.pan.value = (idx - (midis.length - 1) / 2) * 0.28;
-      osc.connect(lp);
-      lp.connect(g);
-      g.connect(pan);
-      pan.connect(master);
-      pan.connect(revSend);
-      osc.start(time);
-      osc.stop(time + dur + 0.05);
+      osc.connect(lp); lp.connect(g); g.connect(pan); pan.connect(master); pan.connect(revSend);
+      osc.start(time); osc.stop(time + dur + 0.05);
     });
   };
 
   const playBass = (time, midi, dur, vol = 0.34) => {
     const osc = off.createOscillator();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(midiToFreq(midi), time);
+    osc.type = 'sine'; osc.frequency.setValueAtTime(midiToFreq(midi), time);
     const oscSub = off.createOscillator();
-    oscSub.type = 'triangle';
-    oscSub.frequency.setValueAtTime(midiToFreq(midi), time);
-    const subLp = off.createBiquadFilter();
-    subLp.type = 'lowpass';
-    subLp.frequency.value = 320;
+    oscSub.type = 'triangle'; oscSub.frequency.setValueAtTime(midiToFreq(midi), time);
+    const subLp = off.createBiquadFilter(); subLp.type = 'lowpass'; subLp.frequency.value = 320;
     const g = off.createGain();
     g.gain.setValueAtTime(0.001, time);
     g.gain.linearRampToValueAtTime(vol, time + 0.02);
     g.gain.exponentialRampToValueAtTime(0.001, time + dur);
-    osc.connect(g);
-    oscSub.connect(subLp);
-    subLp.connect(g);
-    g.connect(master);
-    osc.start(time);
-    oscSub.start(time);
-    osc.stop(time + dur + 0.04);
-    oscSub.stop(time + dur + 0.04);
+    osc.connect(g); oscSub.connect(subLp); subLp.connect(g); g.connect(master);
+    osc.start(time); oscSub.start(time);
+    osc.stop(time + dur + 0.04); oscSub.stop(time + dur + 0.04);
   };
 
   if (beatId === 'oriental_groove') {
-    // 96 BPM Maqam Hijaz (D - Eb - F# - G - A - Bb - C - D)
     const bpm = 96;
-    const step = 60 / bpm / 2; // eighth note
+    const step = 60 / bpm / 2;
     const chords = [
-      { bass: 38, pad: [50, 54, 57, 62], arp: [62, 66, 67, 69, 67, 66, 63, 62] }, // D Hijaz
-      { bass: 39, pad: [51, 55, 58, 63], arp: [63, 67, 70, 67, 66, 63, 62, 57] }, // Eb Maj
-      { bass: 43, pad: [55, 58, 62, 67], arp: [67, 69, 70, 69, 67, 66, 63, 62] }, // Gm
-      { bass: 38, pad: [50, 54, 57, 62], arp: [62, 63, 66, 69, 66, 63, 62, 57] }, // D
+      { bass: 38, pad: [50, 54, 57, 62], arp: [62, 66, 67, 69, 67, 66, 63, 62] },
+      { bass: 39, pad: [51, 55, 58, 63], arp: [63, 67, 70, 67, 66, 63, 62, 57] },
+      { bass: 43, pad: [55, 58, 62, 67], arp: [67, 69, 70, 69, 67, 66, 63, 62] },
+      { bass: 38, pad: [50, 54, 57, 62], arp: [62, 63, 66, 69, 66, 63, 62, 57] },
     ];
     let bar = 0;
     for (let t = 0; t < duration - 0.5; t += step * 8) {
@@ -2990,15 +3969,12 @@ async function synthesizeDemoBeat(beatId = 'oriental_groove') {
       playPadChord(t, c.pad, step * 8, 0.24);
       playBass(t, c.bass, step * 3.5, 0.36);
       playBass(t + step * 4, c.bass, step * 3.5, 0.30);
-
-      // Maqsum-inspired Darbuka rhythm (Doum - Tek - - Tek - Doum - Tek -)
       playKick(t, 0.85);
       playPerc(t + step * 1, 2200, 0.07, 0.24);
       playPerc(t + step * 3, 2400, 0.08, 0.22);
       playKick(t + step * 4, 0.78);
       playPerc(t + step * 6, 2100, 0.08, 0.26);
       playPerc(t + step * 7, 5200, 0.04, 0.14);
-
       c.arp.forEach((note, i) => {
         if (t + i * step < duration - 0.2) {
           playPluck(t + i * step, note, step * 1.9, 0.18, i % 2 === 0 ? -0.35 : 0.35);
@@ -3010,10 +3986,10 @@ async function synthesizeDemoBeat(beatId = 'oriental_groove') {
     const bpm = 82;
     const step = 60 / bpm / 2;
     const prog = [
-      { bass: 45, pad: [57, 60, 64, 67] }, // Am7
-      { bass: 41, pad: [53, 57, 60, 64] }, // Fmaj7
-      { bass: 48, pad: [55, 60, 64, 67] }, // Cmaj7
-      { bass: 43, pad: [55, 59, 62, 67] }, // G6
+      { bass: 45, pad: [57, 60, 64, 67] },
+      { bass: 41, pad: [53, 57, 60, 64] },
+      { bass: 48, pad: [55, 60, 64, 67] },
+      { bass: 43, pad: [55, 59, 62, 67] },
     ];
     let bar = 0;
     for (let t = 0; t < duration - 0.5; t += step * 8) {
@@ -3030,14 +4006,13 @@ async function synthesizeDemoBeat(beatId = 'oriental_groove') {
       bar++;
     }
   } else {
-    // pop_ballad 108 BPM C minor
     const bpm = 108;
     const step = 60 / bpm / 2;
     const prog = [
-      { bass: 36, pad: [48, 55, 60, 63], arp: [60, 63, 67, 72] }, // Cm
-      { bass: 44, pad: [56, 60, 63, 68], arp: [63, 68, 72, 68] }, // Ab
-      { bass: 39, pad: [51, 55, 58, 63], arp: [58, 63, 67, 70] }, // Eb
-      { bass: 46, pad: [53, 58, 62, 65], arp: [58, 62, 65, 70] }, // Bb
+      { bass: 36, pad: [48, 55, 60, 63], arp: [60, 63, 67, 72] },
+      { bass: 44, pad: [56, 60, 63, 68], arp: [63, 68, 72, 68] },
+      { bass: 39, pad: [51, 55, 58, 63], arp: [58, 63, 67, 70] },
+      { bass: 46, pad: [53, 58, 62, 65], arp: [58, 62, 65, 70] },
     ];
     let bar = 0;
     for (let t = 0; t < duration - 0.5; t += step * 8) {
@@ -3062,7 +4037,7 @@ async function synthesizeDemoBeat(beatId = 'oriental_groove') {
 
 /**
  * Main Studio Audio Engine managing live playback, recording, real-time FX,
- * metering, and offline MP3/WAV mixdown.
+ * precision metronome, harmony generation, metering, and offline MP3/WAV mixdown.
  */
 class StudioAudioEngine {
   constructor() {
@@ -3072,11 +4047,14 @@ class StudioAudioEngine {
     // Loaded audio buffers
     this.backingBuffer = null;
     this.backingName = '';
-    this.vocalTakes = [];       // { id, name, buffer, createdAt }
+    this.vocalTakes = [];
     this.activeTakeIndex = -1;
     this.gatedVocalBuffer = null;
     this._lastGateThresh = null;
     this._lastGatedTakeId = null;
+
+    // Cached pitch-shifted harmony buffer
+    this._harmonyCache = { key: '', buffer: null };
 
     // Transport state
     this.isPlaying = false;
@@ -3084,6 +4062,12 @@ class StudioAudioEngine {
     this.playheadSec = 0;
     this.playStartCtxTime = 0;
     this.playStartOffsetSec = 0;
+
+    // Precision Metronome Scheduler
+    this._metroTimer = null;
+    this._metroNextBeatTime = 0;
+    this._metroBeatIndex = 0;
+    this.onMetronomeBeat = null; // (beatIndex, beatsPerBar) => void
 
     // Live graph references
     this._activeSources = [];
@@ -3110,7 +4094,7 @@ class StudioAudioEngine {
     this.liveMonitoring = false;
     this.recordPeakHistory = [];
 
-    // EQ preview filter nodes for frequency response plotting
+    // EQ preview probe
     this._eqProbeCtx = null;
     this._eqProbeNodes = null;
   }
@@ -3151,25 +4135,121 @@ class StudioAudioEngine {
     return this.playheadSec;
   }
 
+  // =========================================================================
+  // Precision Live Metronome (Independent / Synchronized, Instantly Muteable)
+  // =========================================================================
+  setMetronomeEnabled(enabled) {
+    this.state.metronome.enabled = !!enabled;
+    if (this.state.metronome.enabled) {
+      this._startMetronomeScheduler();
+    } else {
+      this._stopMetronomeScheduler();
+    }
+  }
+
+  setMetronomeBpm(bpm) {
+    this.state.metronome.bpm = clamp(Math.round(bpm), 50, 180);
+  }
+
+  setMetronomeBeatsPerBar(beats) {
+    this.state.metronome.beatsPerBar = [3, 4, 6].includes(beats) ? beats : 4;
+    this._metroBeatIndex = 0;
+  }
+
+  setMetronomeVolume(vol) {
+    this.state.metronome.volume = clamp(vol, 0, 1);
+  }
+
+  _startMetronomeScheduler(alignTime = null) {
+    const ctx = this.ensureContext();
+    this._stopMetronomeScheduler();
+    this._metroBeatIndex = 0;
+    this._metroNextBeatTime = alignTime !== null ? alignTime : ctx.currentTime + 0.04;
+
+    const scheduleAhead = 0.12;
+    this._metroTimer = setInterval(() => {
+      if (!this.state.metronome.enabled || !this.ctx) return;
+      const now = this.ctx.currentTime;
+      while (this._metroNextBeatTime < now + scheduleAhead) {
+        const beat = this._metroBeatIndex;
+        const beatsPerBar = this.state.metronome.beatsPerBar;
+        const when = this._metroNextBeatTime;
+        this._scheduleMetronomeClick(when, beat === 0);
+
+        if (this.onMetronomeBeat) {
+          const delayMs = Math.max(0, (when - now) * 1000);
+          setTimeout(() => {
+            if (this.state.metronome.enabled && this.onMetronomeBeat) {
+              this.onMetronomeBeat(beat, beatsPerBar);
+            }
+          }, delayMs);
+        }
+
+        const beatDur = 60 / clamp(this.state.metronome.bpm, 50, 180);
+        this._metroNextBeatTime += beatDur;
+        this._metroBeatIndex = (this._metroBeatIndex + 1) % beatsPerBar;
+      }
+    }, 25);
+  }
+
+  _stopMetronomeScheduler() {
+    if (this._metroTimer) {
+      clearInterval(this._metroTimer);
+      this._metroTimer = null;
+    }
+  }
+
+  _scheduleMetronomeClick(time, accent = false) {
+    if (!this.ctx) return;
+    const vol = clamp(this.state.metronome.volume, 0, 1) * (accent ? 0.42 : 0.28);
+    if (vol <= 0.001) return;
+
+    const osc = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(accent ? 1380 : 920, time);
+    osc.frequency.exponentialRampToValueAtTime(accent ? 680 : 480, time + 0.032);
+    g.gain.setValueAtTime(vol, time);
+    g.gain.exponentialRampToValueAtTime(0.0008, time + 0.045);
+    osc.connect(g);
+    g.connect(this.ctx.destination);
+    osc.start(time);
+    osc.stop(time + 0.05);
+  }
+
+  playMetronomeClick(accent = false) {
+    const ctx = this.ensureContext();
+    this._scheduleMetronomeClick(ctx.currentTime + 0.005, accent);
+  }
+
+  // =========================================================================
+  // Track Loading & Buffer Management
+  // =========================================================================
+  setBackingBuffer(buffer, name) {
+    this.backingBuffer = buffer;
+    this.backingName = name || 'موسيقى مؤلَّفة';
+    this.state.backing.muted = false;
+    this.stop(true);
+    return buffer;
+  }
+
+  clearBackingTrack() {
+    this.backingBuffer = null;
+    this.backingName = '';
+    this.stop(true);
+  }
+
   async loadBackingFile(file) {
     const ctx = this.ensureContext();
     const arrayBuffer = await file.arrayBuffer();
     const decoded = await ctx.decodeAudioData(arrayBuffer);
-    this.backingBuffer = decoded;
-    this.backingName = file.name;
-    this.stop();
-    this.playheadSec = 0;
-    return decoded;
+    return this.setBackingBuffer(decoded, file.name);
   }
 
   async loadDemoBeat(beatId, beatName) {
     this.ensureContext();
     const buffer = await synthesizeDemoBeat(beatId);
-    this.backingBuffer = buffer;
-    this.backingName = beatName;
-    this.stop();
-    this.playheadSec = 0;
-    return buffer;
+    return this.setBackingBuffer(buffer, beatName);
   }
 
   async loadVocalFile(file) {
@@ -3217,6 +4297,7 @@ class StudioAudioEngine {
     this.gatedVocalBuffer = null;
     this._lastGateThresh = null;
     this._lastGatedTakeId = null;
+    this._harmonyCache = { key: '', buffer: null };
   }
 
   _getProcessedVocalBuffer(ctx) {
@@ -3236,6 +4317,21 @@ class StudioAudioEngine {
       this._lastGatedTakeId = takeId;
     }
     return processed;
+  }
+
+  _getHarmonyBuffer(ctx, vocalBuf) {
+    if (!vocalBuf || !this.state.vocal.fxEnabled || !this.state.vocalFx.harmonyEnabled) return null;
+    const semi = Number(this.state.vocalFx.harmonyInterval) || 7;
+    const takeId = this.vocalTakes[this.activeTakeIndex]?.id || 'v';
+    const key = `${ctx.sampleRate}_${takeId}_${semi}_${this.state.vocalFx.gateThreshold}`;
+    if (ctx === this.ctx && this._harmonyCache.key === key && this._harmonyCache.buffer) {
+      return this._harmonyCache.buffer;
+    }
+    const buf = createPitchShiftedHarmonyBuffer(ctx, vocalBuf, semi);
+    if (ctx === this.ctx) {
+      this._harmonyCache = { key, buffer: buf };
+    }
+    return buf;
   }
 
   _getReverbIR(ctx) {
@@ -3280,7 +4376,12 @@ class StudioAudioEngine {
     this.playStartOffsetSec = offset;
     this.isPlaying = true;
 
-    // Build Master Bus + Stereo Analysers
+    // Align live metronome to playback start if enabled
+    if (this.state.metronome.enabled) {
+      this._startMetronomeScheduler(now);
+    }
+
+    // Master Bus + Analysers
     this._masterChain = buildMasterChain(ctx, this.state);
 
     const meterSplit = ctx.createChannelSplitter(2);
@@ -3311,7 +4412,6 @@ class StudioAudioEngine {
       this._backingDuckGain = ctx.createGain();
       this._backingDuckGain.gain.value = 1.0;
 
-      // Apply smooth Auto-Ducking curve if vocal track exists & is active
       if (this.activeVocalBuffer && vocalGain > 0 && this.state.vocal.duckingDb > 0.05) {
         const syncSec = this.state.vocal.syncOffsetMs / 1000;
         const remaining = Math.max(0.2, totalDur - offset);
@@ -3350,7 +4450,7 @@ class StudioAudioEngine {
       }
     }
 
-    // 2. Vocal Track Source + Full Vocal FX Chain
+    // 2. Vocal Track Source + Full Vocal FX Chain + Optional Harmony Layer
     const vocalBuf = this._getProcessedVocalBuffer(ctx);
     if (vocalBuf) {
       const vSrc = ctx.createBufferSource();
@@ -3368,15 +4468,27 @@ class StudioAudioEngine {
       this._vocalPan.connect(this._masterChain.input);
 
       const syncSec = this.state.vocal.syncOffsetMs / 1000;
-      if (offset >= syncSec) {
-        const srcOffset = offset - syncSec;
-        if (srcOffset < vocalBuf.duration) {
-          vSrc.start(now, srcOffset);
-          this._activeSources.push(vSrc);
+      const startSource = (src, buf) => {
+        if (offset >= syncSec) {
+          const srcOffset = offset - syncSec;
+          if (srcOffset < buf.duration) {
+            src.start(now, srcOffset);
+            this._activeSources.push(src);
+          }
+        } else {
+          src.start(now + (syncSec - offset), 0);
+          this._activeSources.push(src);
         }
-      } else {
-        vSrc.start(now + (syncSec - offset), 0);
-        this._activeSources.push(vSrc);
+      };
+
+      startSource(vSrc, vocalBuf);
+
+      const harmonyBuf = this._getHarmonyBuffer(ctx, vocalBuf);
+      if (harmonyBuf) {
+        const hSrc = ctx.createBufferSource();
+        hSrc.buffer = harmonyBuf;
+        hSrc.connect(this._vocalChain.harmonyInput);
+        startSource(hSrc, harmonyBuf);
       }
     }
 
@@ -3445,35 +4557,78 @@ class StudioAudioEngine {
     if (this._vocalChain) {
       const fx = this.state.vocalFx;
       const n = this._vocalChain.nodes;
-      n.hpf.frequency.setTargetAtTime(fx.hpfFreq, now, smooth);
-      n.eqLow.gain.setTargetAtTime(fx.eqLow, now, smooth);
-      n.eqWarmth.gain.setTargetAtTime(fx.eqWarmth, now, smooth);
-      n.eqPresence.gain.setTargetAtTime(fx.eqPresence, now, smooth);
-      n.eqAir.gain.setTargetAtTime(fx.eqAir, now, smooth);
-      n.deEsser.gain.setTargetAtTime(-(fx.deEsser / 100) * 11, now, smooth);
+      const eqOn = fx.eqEnabled !== false;
 
-      if (options.warmthChanged) {
-        n.warmth.curve = createWarmthCurve(fx.warmth);
+      n.hpf.frequency.setTargetAtTime(eqOn ? fx.hpfFreq : 20, now, smooth);
+      n.eqLow.gain.setTargetAtTime(eqOn ? fx.eqLow : 0, now, smooth);
+      n.eqWarmth.gain.setTargetAtTime(eqOn ? fx.eqWarmth : 0, now, smooth);
+      n.eqPresence.gain.setTargetAtTime(eqOn ? fx.eqPresence : 0, now, smooth);
+      n.eqAir.gain.setTargetAtTime(eqOn ? fx.eqAir : 0, now, smooth);
+      n.deEsser.gain.setTargetAtTime(eqOn ? -(fx.deEsser / 100) * 11 : 0, now, smooth);
+
+      if (options.warmthChanged || options.eqToggleChanged) {
+        n.warmth.curve = createWarmthCurve(eqOn ? fx.warmth : 0);
       }
 
+      // Overdrive
+      const driveAmt = fx.driveEnabled ? clamp((fx.driveAmount || 0) / 100, 0, 1) * 0.72 : 0;
+      n.driveWet.gain.setTargetAtTime(driveAmt, now, smooth);
+      n.driveDry.gain.setTargetAtTime(1 - driveAmt * 0.55, now, smooth);
+      if (options.driveChanged) {
+        n.driveShaper.curve = createOverdriveCurve(fx.driveAmount || 0);
+      }
+
+      // Lo-Fi Radio / Telephone / Megaphone
+      const lofiSpec = getLofiFilterSpec(fx.lofiStyle);
+      n.lofiHp.frequency.setTargetAtTime(lofiSpec.hp, now, smooth);
+      n.lofiLp.frequency.setTargetAtTime(lofiSpec.lp, now, smooth);
+      n.lofiPeak.frequency.setTargetAtTime(lofiSpec.peakFreq, now, smooth);
+      n.lofiPeak.Q.setTargetAtTime(lofiSpec.peakQ, now, smooth);
+      n.lofiPeak.gain.setTargetAtTime(lofiSpec.peakGain, now, smooth);
+      const lofiRatio = fx.lofiEnabled ? clamp((fx.lofiMix || 0) / 100, 0, 1) : 0;
+      n.lofiWet.gain.setTargetAtTime(lofiRatio, now, smooth);
+      n.lofiDry.gain.setTargetAtTime(1 - lofiRatio, now, smooth);
+
+      // Compressor
+      const compOn = fx.compEnabled !== false;
       n.comp.threshold.setTargetAtTime(fx.compThreshold, now, smooth);
       n.comp.ratio.setTargetAtTime(Math.max(1, fx.compRatio), now, smooth);
       n.comp.attack.setTargetAtTime(fx.compAttack / 1000, now, smooth);
       n.comp.release.setTargetAtTime(fx.compRelease / 1000, now, smooth);
       n.compMakeup.gain.setTargetAtTime(dbToGain(fx.compMakeup), now, smooth);
+      n.compActiveGain.gain.setTargetAtTime(compOn ? 1 : 0, now, smooth);
+      n.compBypassGain.gain.setTargetAtTime(compOn ? 0 : 1, now, smooth);
 
+      // Flanger / Phaser Modulation
+      n.modLfo.frequency.setTargetAtTime(fx.modRate || 0.6, now, smooth);
+      n.flangerDepth.gain.setTargetAtTime(((fx.modDepth || 40) / 100) * 0.0045, now, smooth);
+      n.phaserDepth.gain.setTargetAtTime(((fx.modDepth || 40) / 100) * 700, now, smooth);
+      const modMixRatio = fx.modEnabled ? clamp((fx.modMix || 0) / 100, 0, 1) * 0.72 : 0;
+      n.flangerWet.gain.setTargetAtTime(fx.modType === 'flanger' ? modMixRatio : 0, now, smooth);
+      n.phaserWet.gain.setTargetAtTime(fx.modType === 'phaser' ? modMixRatio : 0, now, smooth);
+
+      // Harmony mix
+      n.harmonyInput.gain.setTargetAtTime(
+        fx.harmonyEnabled ? clamp((fx.harmonyMix || 0) / 100, 0, 1) * 0.85 : 0,
+        now,
+        smooth
+      );
+
+      // Doubler, Reverb, Delay
       n.doublerWet.gain.setTargetAtTime((fx.doublerMix / 100) * 0.45, now, smooth);
-      n.revPreDelay.delayTime.setTargetAtTime(fx.reverbPreDelay / 1000, now, smooth);
-      n.revWet.gain.setTargetAtTime((fx.reverbMix / 100) * 0.95, now, smooth);
 
+      const revOn = fx.reverbEnabled !== false;
+      n.revPreDelay.delayTime.setTargetAtTime(fx.reverbPreDelay / 1000, now, smooth);
+      n.revWet.gain.setTargetAtTime(revOn ? (fx.reverbMix / 100) * 0.95 : 0, now, smooth);
       if (options.reverbIRChanged) {
         n.convolver.buffer = this._getReverbIR(this.ctx);
       }
 
+      const delOn = fx.delayEnabled !== false;
       n.delayNode.delayTime.setTargetAtTime(fx.delayTimeMs / 1000, now, smooth);
       n.delayTone.frequency.setTargetAtTime(fx.delayToneHz, now, smooth);
       n.delayFeedback.gain.setTargetAtTime(clamp(fx.delayFeedback / 100, 0, 0.78), now, smooth);
-      n.delayWet.gain.setTargetAtTime((fx.delayMix / 100) * 0.75, now, smooth);
+      n.delayWet.gain.setTargetAtTime(delOn ? (fx.delayMix / 100) * 0.75 : 0, now, smooth);
 
       const en = this.state.vocal.fxEnabled;
       n.activeGain.gain.setTargetAtTime(en ? 1 : 0, now, smooth);
@@ -3557,27 +4712,9 @@ class StudioAudioEngine {
   }
 
   /**
-   * Play a short crisp metronome click for count-in.
+   * Start synchronized vocal recording (works BOTH over backing music AND A Cappella!).
    */
-  playMetronomeClick(accent = false) {
-    const ctx = this.ensureContext();
-    const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const g = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(accent ? 1320 : 880, now);
-    g.gain.setValueAtTime(0.3, now);
-    g.gain.exponentialRampToValueAtTime(0.001, now + 0.055);
-    osc.connect(g);
-    g.connect(ctx.destination);
-    osc.start(now);
-    osc.stop(now + 0.06);
-  }
-
-  /**
-   * Start synchronized vocal recording (optionally playing the backing track in sync).
-   */
-  async startRecording(startSec = 0) {
+  async startRecording(startSec = 0, { acapella = false } = {}) {
     const ctx = this.ensureContext();
     if (!this.micStream) {
       await this.initMicrophone(false);
@@ -3589,7 +4726,6 @@ class StudioAudioEngine {
     this.playStartOffsetSec = startSec;
     this.isRecording = true;
 
-    // Capture raw uncompressed Float32 PCM directly from microphone
     const bufferSize = 2048;
     this._recorderNode = ctx.createScriptProcessor(bufferSize, 1, 1);
     const silentOut = ctx.createGain();
@@ -3602,7 +4738,6 @@ class StudioAudioEngine {
       copy.set(inputData);
       this._recordChunksL.push(copy);
 
-      // Compute peak for live waveform drawing
       let peak = 0;
       for (let i = 0; i < inputData.length; i++) {
         const a = Math.abs(inputData[i]);
@@ -3615,11 +4750,16 @@ class StudioAudioEngine {
     this._recorderNode.connect(silentOut);
     silentOut.connect(ctx.destination);
 
-    const now = ctx.currentTime + 0.02;
+    const now = ctx.currentTime + 0.025;
     this._recordStartTime = now;
 
-    // Play backing track simultaneously if loaded and not muted
-    if (this.backingBuffer && !this.state.backing.muted) {
+    // Align live metronome beat 1 to exact recording start if enabled
+    if (this.state.metronome.enabled) {
+      this._startMetronomeScheduler(now);
+    }
+
+    // Play backing track simultaneously unless A Cappella mode or muted
+    if (!acapella && this.backingBuffer && !this.state.backing.muted) {
       const bSrc = ctx.createBufferSource();
       bSrc.buffer = this.backingBuffer;
       const bGain = ctx.createGain();
@@ -3657,7 +4797,6 @@ class StudioAudioEngine {
     try { this._recorderNode?.disconnect(); } catch {}
     this._recorderNode = null;
 
-    // Stop backing playback
     this._activeSources.forEach((s) => { try { s.stop(); } catch {} });
     this._activeSources = [];
 
@@ -3665,7 +4804,6 @@ class StudioAudioEngine {
     if (totalSamples < 512) return null;
 
     const sr = this.ctx.sampleRate;
-    // Prepend silence if recording started after t = 0 so it aligns on timeline
     const padSamples = Math.max(0, Math.floor(this.playStartOffsetSec * sr));
     const buf = this.ctx.createBuffer(2, padSamples + totalSamples, sr);
     const chL = buf.getChannelData(0);
@@ -3683,9 +4821,6 @@ class StudioAudioEngine {
     return this.addVocalTake(buf);
   }
 
-  /**
-   * Read live metering data (Stereo VU, Mic Input Peak, Compressor GR, FFT Spectrum).
-   */
   getMeterData() {
     const readPeakRms = (analyser) => {
       if (!analyser) return { peak: 0, rms: 0 };
@@ -3711,7 +4846,7 @@ class StudioAudioEngine {
       this._analyserFFT.getByteFrequencyData(fft);
     }
 
-    const vocalCompGR = (this.isPlaying && this._vocalChain)
+    const vocalCompGR = (this.isPlaying && this._vocalChain && this.state.vocalFx.compEnabled !== false)
       ? Math.abs(this._vocalChain.nodes.comp.reduction || 0)
       : 0;
 
@@ -3729,10 +4864,6 @@ class StudioAudioEngine {
     };
   }
 
-  /**
-   * Compute the exact combined frequency response (in dB) of the vocal EQ + HPF + De-Esser
-   * across logarithmically spaced frequencies for visual curve plotting.
-   */
   getVocalEqCurve(freqs) {
     if (!this._eqProbeCtx) {
       this._eqProbeCtx = new OfflineAudioContext(1, 64, 44100);
@@ -3757,13 +4888,14 @@ class StudioAudioEngine {
     }
 
     const fx = this.state.vocalFx;
+    const eqOn = fx.eqEnabled !== false;
     const n = this._eqProbeNodes;
-    n.hpf.frequency.value = fx.hpfFreq;
-    n.low.gain.value = fx.eqLow;
-    n.warm.gain.value = fx.eqWarmth;
-    n.pres.gain.value = fx.eqPresence;
-    n.air.gain.value = fx.eqAir;
-    n.deess.gain.value = -(fx.deEsser / 100) * 11;
+    n.hpf.frequency.value = eqOn ? fx.hpfFreq : 20;
+    n.low.gain.value = eqOn ? fx.eqLow : 0;
+    n.warm.gain.value = eqOn ? fx.eqWarmth : 0;
+    n.pres.gain.value = eqOn ? fx.eqPresence : 0;
+    n.air.gain.value = eqOn ? fx.eqAir : 0;
+    n.deess.gain.value = eqOn ? -(fx.deEsser / 100) * 11 : 0;
 
     const totalDb = new Float32Array(freqs.length);
     const mag = new Float32Array(freqs.length);
@@ -3779,8 +4911,8 @@ class StudioAudioEngine {
   }
 
   /**
-   * Render the entire mix + vocal FX + mastering chain offline at 44.1 kHz Stereo
-   * and encode to MP3 (via lamejs) or WAV.
+   * Render the entire mix + vocal FX + harmony + mastering chain offline at 44.1 kHz Stereo
+   * and encode to MP3 (via lamejs) or WAV. (Metronome is never included in exports.)
    */
   async exportMix({ format = 'mp3', bitrate = 192, normalize = true, onProgress = null } = {}) {
     if (!this.backingBuffer && !this.activeVocalBuffer) {
@@ -3789,14 +4921,14 @@ class StudioAudioEngine {
 
     const sampleRate = 44100;
     const baseDur = this.getDuration();
-    // Add tail for Reverb / Delay ring-out
     const hasTail = this.activeVocalBuffer && this.state.vocal.fxEnabled &&
-      (this.state.vocalFx.reverbMix > 0 || this.state.vocalFx.delayMix > 0);
+      ((this.state.vocalFx.reverbEnabled !== false && this.state.vocalFx.reverbMix > 0) ||
+       (this.state.vocalFx.delayEnabled !== false && this.state.vocalFx.delayMix > 0));
     const tailSec = hasTail ? Math.min(3.5, this.state.vocalFx.reverbDecay + 0.6) : 0.3;
     const totalDuration = baseDur + tailSec;
     const totalLength = Math.ceil(totalDuration * sampleRate);
 
-    if (onProgress) onProgress({ stage: 'rendering', percent: 8, message: 'جاري تطبيق الفلاتر وعمل الميكس والماستر...' });
+    if (onProgress) onProgress({ stage: 'rendering', percent: 8, message: 'جاري تطبيق الفلاتر والإيفكتات وعمل الميكس والماستر...' });
 
     const offCtx = new OfflineAudioContext(2, totalLength, sampleRate);
     const masterChain = buildMasterChain(offCtx, this.state);
@@ -3837,14 +4969,11 @@ class StudioAudioEngine {
       bPan.connect(masterChain.input);
 
       const bOffset = this.state.backing.offsetSec;
-      if (bOffset >= 0) {
-        bSrc.start(bOffset, 0);
-      } else {
-        bSrc.start(0, -bOffset);
-      }
+      if (bOffset >= 0) bSrc.start(bOffset, 0);
+      else bSrc.start(0, -bOffset);
     }
 
-    // 2. Vocal Track + FX
+    // 2. Vocal Track + All FX + Optional Harmony Layer
     if (this.activeVocalBuffer && vocalGain > 0) {
       const gatedVocal = applyNoiseGate(
         offCtx,
@@ -3868,10 +4997,20 @@ class StudioAudioEngine {
       vPan.connect(masterChain.input);
 
       const syncSec = this.state.vocal.syncOffsetMs / 1000;
-      if (syncSec >= 0) {
-        vSrc.start(syncSec, 0);
-      } else {
-        vSrc.start(0, -syncSec);
+      if (syncSec >= 0) vSrc.start(syncSec, 0);
+      else vSrc.start(0, -syncSec);
+
+      if (this.state.vocal.fxEnabled && this.state.vocalFx.harmonyEnabled) {
+        const hBuf = createPitchShiftedHarmonyBuffer(
+          offCtx,
+          gatedVocal,
+          Number(this.state.vocalFx.harmonyInterval) || 7
+        );
+        const hSrc = offCtx.createBufferSource();
+        hSrc.buffer = hBuf;
+        hSrc.connect(vocalChain.harmonyInput);
+        if (syncSec >= 0) hSrc.start(syncSec, 0);
+        else hSrc.start(0, -syncSec);
       }
     }
 
@@ -3923,6 +5062,890 @@ class StudioAudioEngine {
       bitrate,
     };
   }
+}
+
+/**
+ * Nagham Studio — Smart Pitch Analyzer, Chord Composer & Multi-Instrument Arranger
+ *
+ * 1. Detects sung vocal pitch contour (Autocorrelation / YIN-inspired)
+ * 2. Identifies Root Key & Musical Scale / Arabic Maqam (Minor, Major, Hijaz, Kurd, Bayati)
+ * 3. Composes bar-by-bar harmonious chord progressions matching the vocal melody
+ * 4. Synthesizes rich stereo multi-instrument backing arrangements (Piano, Guitar,
+ *    Oriental Oud, Strings, Bass, Synth) + Rhythms (Maqsum, Saidi, Pop, Lo-Fi, Trap, Acoustic)
+ */
+const NOTE_NAMES = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
+const NOTE_NAMES_AR = ['دو (C)', 'دو# (C#)', 'ري (D)', 'مي♭ (Eb)', 'مي (E)', 'فا (F)', 'فا# (F#)', 'صول (G)', 'لا♭ (Ab)', 'لا (A)', 'سي♭ (Bb)', 'سي (B)'];
+const SCALES = {
+  minor: {
+    id: 'minor',
+    name: 'نهاوند / Minor',
+    intervals: [0, 2, 3, 5, 7, 8, 10],
+    chords: [
+      { degree: 0, quality: 'min', label: 'i' },
+      { degree: 3, quality: 'maj', label: 'III' },
+      { degree: 5, quality: 'min', label: 'iv' },
+      { degree: 7, quality: 'min', label: 'v' },
+      { degree: 7, quality: 'maj', label: 'V' },
+      { degree: 8, quality: 'maj', label: 'VI' },
+      { degree: 10, quality: 'maj', label: 'VII' },
+    ],
+    defaultProg: [0, 5, 2, 6], // i - VI - III - VII (indices into chords)
+  },
+  major: {
+    id: 'major',
+    name: 'عجم / Major',
+    intervals: [0, 2, 4, 5, 7, 9, 11],
+    chords: [
+      { degree: 0, quality: 'maj', label: 'I' },
+      { degree: 2, quality: 'min', label: 'ii' },
+      { degree: 4, quality: 'min', label: 'iii' },
+      { degree: 5, quality: 'maj', label: 'IV' },
+      { degree: 7, quality: 'maj', label: 'V' },
+      { degree: 9, quality: 'min', label: 'vi' },
+    ],
+    defaultProg: [0, 4, 5, 3], // I - V - vi - IV
+  },
+  hijaz: {
+    id: 'hijaz',
+    name: 'حجاز شرقي (Hijaz)',
+    intervals: [0, 1, 4, 5, 7, 8, 10],
+    chords: [
+      { degree: 0, quality: 'maj', label: 'I (حجاز)' },
+      { degree: 1, quality: 'maj', label: 'bII' },
+      { degree: 5, quality: 'min', label: 'iv' },
+      { degree: 7, quality: 'dim', label: 'v°' },
+      { degree: 8, quality: 'maj', label: 'bVI' },
+      { degree: 10, quality: 'min', label: 'bvii' },
+    ],
+    defaultProg: [0, 1, 2, 0], // I - bII - iv - I
+  },
+  kurd: {
+    id: 'kurd',
+    name: 'كرد (Kurd / Phrygian)',
+    intervals: [0, 1, 3, 5, 7, 8, 10],
+    chords: [
+      { degree: 0, quality: 'min', label: 'i (كرد)' },
+      { degree: 1, quality: 'maj', label: 'bII' },
+      { degree: 3, quality: 'maj', label: 'bIII' },
+      { degree: 5, quality: 'min', label: 'iv' },
+      { degree: 8, quality: 'maj', label: 'bVI' },
+      { degree: 10, quality: 'min', label: 'bvii' },
+    ],
+    defaultProg: [0, 1, 2, 1], // i - bII - bIII - bII
+  },
+  bayati: {
+    id: 'bayati',
+    name: 'بياتي / دوري (Bayati Feel)',
+    intervals: [0, 2, 3, 5, 7, 9, 10],
+    chords: [
+      { degree: 0, quality: 'min', label: 'i' },
+      { degree: 3, quality: 'maj', label: 'bIII' },
+      { degree: 5, quality: 'maj', label: 'IV' },
+      { degree: 7, quality: 'min', label: 'v' },
+      { degree: 10, quality: 'maj', label: 'bVII' },
+    ],
+    defaultProg: [0, 4, 2, 0], // i - bVII - IV - i
+  },
+};
+const CHORD_QUALITIES = {
+  maj: { suffix: '', intervals: [0, 4, 7] },
+  min: { suffix: 'm', intervals: [0, 3, 7] },
+  maj7: { suffix: 'maj7', intervals: [0, 4, 7, 11] },
+  min7: { suffix: 'm7', intervals: [0, 3, 7, 10] },
+  dom7: { suffix: '7', intervals: [0, 4, 7, 10] },
+  sus2: { suffix: 'sus2', intervals: [0, 2, 7] },
+  dim: { suffix: 'dim', intervals: [0, 3, 6] },
+};
+const RHYTHM_STYLES = [
+  { id: 'none', name: 'بدون إيقاع (كوردات فقط)' },
+  { id: 'maqsum', name: 'مقسوم شرقي (دربكة ورق)' },
+  { id: 'saidi', name: 'سعيدي / بلدي شرقي' },
+  { id: 'pop', name: 'بوب عصري (Pop Groove)' },
+  { id: 'lofi', name: 'لو-فاي / هيب هوب هادئ' },
+  { id: 'trap', name: 'تراب / راب (Trap 808)' },
+  { id: 'acoustic', name: 'أكوستيك هادئ (Kick & Shaker)' },
+];
+const PLAY_STYLES = [
+  { id: 'ballad', name: 'هادئ ورومانسي (Ballad)' },
+  { id: 'arpeggio', name: 'أربيجيو متدفق (Arpeggio)' },
+  { id: 'groove', name: 'إيقاعي حيوي (Rhythmic Groove)' },
+  { id: 'oriental', name: 'طربي شرقي (Oriental Feel)' },
+];
+function formatChordName(rootPc, quality) {
+  const note = NOTE_NAMES[((rootPc % 12) + 12) % 12];
+  const q = CHORD_QUALITIES[quality] || CHORD_QUALITIES.maj;
+  return `${note}${q.suffix}`;
+}
+function getChordMidiNotes(rootPc, quality, baseOctaveMidi = 48) {
+  const q = CHORD_QUALITIES[quality] || CHORD_QUALITIES.maj;
+  // Keep chord voicing centered nicely in mid register (C3 - G4)
+  let rootMidi = baseOctaveMidi + (((rootPc % 12) + 12) % 12);
+  if (rootMidi > 57) rootMidi -= 12;
+  return q.intervals.map((iv) => rootMidi + iv);
+}
+
+/**
+ * Detect fundamental frequency (Hz) in a frame of mono audio using normalized autocorrelation.
+ * Returns null if frame is silent or unvoiced (e.g. consonants/breath).
+ */
+function detectFramePitchHz(samples, sampleRate) {
+  const n = samples.length;
+  let rms = 0;
+  for (let i = 0; i < n; i++) rms += samples[i] * samples[i];
+  rms = Math.sqrt(rms / n);
+  if (rms < 0.014) return null; // Too quiet / unvoiced
+
+  // Vocal fundamental range: ~80 Hz (E2) to ~900 Hz (A5)
+  const minLag = Math.max(16, Math.floor(sampleRate / 900));
+  const maxLag = Math.min(Math.floor(n / 2), Math.floor(sampleRate / 80));
+
+  const corrs = new Float32Array(maxLag + 1);
+  let bestCorr = 0;
+
+  for (let lag = minLag; lag <= maxLag; lag++) {
+    let num = 0;
+    let denA = 0;
+    let denB = 0;
+    const limit = n - lag;
+    for (let i = 0; i < limit; i += 2) {
+      const a = samples[i];
+      const b = samples[i + lag];
+      num += a * b;
+      denA += a * a;
+      denB += b * b;
+    }
+    const denom = Math.sqrt(denA * denB);
+    const corr = denom > 1e-8 ? num / denom : 0;
+    corrs[lag] = corr;
+    if (corr > bestCorr) bestCorr = corr;
+  }
+
+  if (bestCorr < 0.52) return null;
+
+  // Pick the FIRST local maximum that reaches at least 88% of bestCorr
+  // to avoid subharmonic / octave-down errors (e.g., picking 110Hz instead of 440Hz).
+  const threshold = bestCorr * 0.88;
+  let bestLag = -1;
+  for (let lag = minLag + 1; lag < maxLag; lag++) {
+    if (corrs[lag] >= threshold && corrs[lag] >= corrs[lag - 1] && corrs[lag] >= corrs[lag + 1]) {
+      bestLag = lag;
+      break;
+    }
+  }
+  if (bestLag <= 0) {
+    for (let lag = minLag; lag <= maxLag; lag++) {
+      if (corrs[lag] === bestCorr) { bestLag = lag; break; }
+    }
+  }
+
+  // Parabolic interpolation around peak for sub-sample frequency precision
+  if (bestLag > minLag && bestLag < maxLag) {
+    const y0 = corrs[bestLag - 1];
+    const y1 = corrs[bestLag];
+    const y2 = corrs[bestLag + 1];
+    const denom = 2 * (y0 - 2 * y1 + y2);
+    if (Math.abs(denom) > 1e-6) {
+      bestLag += (y0 - y2) / denom;
+    }
+  }
+
+  return bestLag > 0 ? sampleRate / bestLag : null;
+}
+
+/**
+ * Analyze a recorded vocal AudioBuffer to detect Root Key, Scale/Maqam,
+ * and compose a bar-by-bar harmonious chord progression.
+ */
+function analyzeVocalAndComposeChords(vocalBuffer, {
+  bpm = 100,
+  beatsPerBar = 4,
+  preferredScaleId = 'auto',
+  preferredRoot = -1,
+} = {}) {
+  const sr = vocalBuffer.sampleRate;
+  const data = vocalBuffer.getChannelData(0);
+  const barSec = (60 / clamp(bpm, 50, 200)) * beatsPerBar;
+  const numBars = Math.max(4, Math.ceil(vocalBuffer.duration / barSec));
+
+  const frameSize = Math.min(2048, Math.floor(sr * 0.055));
+  const hopSize = Math.floor(sr * 0.045);
+
+  const globalChroma = new Float32Array(12);
+  const barChromas = Array.from({ length: numBars }, () => new Float32Array(12));
+  let voicedFrames = 0;
+
+  for (let pos = 0; pos + frameSize < data.length; pos += hopSize) {
+    const frame = data.subarray(pos, pos + frameSize);
+    const hz = detectFramePitchHz(frame, sr);
+    if (!hz) continue;
+
+    const midi = 69 + 12 * Math.log2(hz / 440);
+    const pc = ((Math.round(midi) % 12) + 12) % 12;
+    const barIdx = Math.min(numBars - 1, Math.floor((pos / sr) / barSec));
+
+    globalChroma[pc] += 1;
+    barChromas[barIdx][pc] += 1;
+    voicedFrames++;
+  }
+
+  // Fallback if recording was very quiet or unpitched
+  if (voicedFrames < 4) {
+    const root = preferredRoot >= 0 ? preferredRoot : 2; // D
+    const scaleId = preferredScaleId !== 'auto' && SCALES[preferredScaleId] ? preferredScaleId : 'minor';
+    const prog = buildDefaultProgression(root, scaleId, numBars);
+    return {
+      rootPc: root,
+      scaleId,
+      confidence: 0,
+      voicedFrames,
+      barSec,
+      chords: prog,
+    };
+  }
+
+  // Score every (root, scale) pair against the global pitch-class histogram
+  const candidateScales = preferredScaleId !== 'auto' && SCALES[preferredScaleId]
+    ? [SCALES[preferredScaleId]]
+    : Object.values(SCALES);
+
+  const candidateRoots = preferredRoot >= 0
+    ? [preferredRoot]
+    : [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+
+  let bestRoot = 0;
+  let bestScale = candidateScales[0];
+  let bestScore = -Infinity;
+
+  for (const scale of candidateScales) {
+    for (const root of candidateRoots) {
+      const inScale = new Set(scale.intervals.map((iv) => (root + iv) % 12));
+      let score = 0;
+      for (let pc = 0; pc < 12; pc++) {
+        if (inScale.has(pc)) {
+          // Slight emphasis on Tonic (0) and Dominant (7)
+          const rel = (pc - root + 12) % 12;
+          const weight = rel === 0 ? 1.35 : rel === 7 ? 1.15 : 1.0;
+          score += globalChroma[pc] * weight;
+        } else {
+          score -= globalChroma[pc] * 1.45;
+        }
+      }
+      if (score > bestScore) {
+        bestScore = score;
+        bestRoot = root;
+        bestScale = scale;
+      }
+    }
+  }
+
+  const totalWeight = globalChroma.reduce((a, b) => a + b, 0) || 1;
+  const confidence = clamp(bestScore / (totalWeight * 1.1), 0, 1);
+
+  // Choose the best harmonious chord for each bar
+  const chords = [];
+  let prevChordKey = '';
+
+  for (let b = 0; b < numBars; b++) {
+    const chroma = barChromas[b];
+    const barEnergy = chroma.reduce((a, v) => a + v, 0);
+
+    if (barEnergy < 1.5) {
+      // Silent bar -> use musical default progression cadence
+      const defIdx = bestScale.defaultProg[b % bestScale.defaultProg.length];
+      const cDef = bestScale.chords[defIdx % bestScale.chords.length];
+      const cRoot = (bestRoot + cDef.degree) % 12;
+      chords.push({
+        bar: b + 1,
+        rootPc: cRoot,
+        quality: cDef.quality,
+        name: formatChordName(cRoot, cDef.quality),
+      });
+      prevChordKey = `${cRoot}_${cDef.quality}`;
+      continue;
+    }
+
+    let bestChord = bestScale.chords[0];
+    let bestChordScore = -Infinity;
+
+    for (const cand of bestScale.chords) {
+      const cRoot = (bestRoot + cand.degree) % 12;
+      const q = CHORD_QUALITIES[cand.quality] || CHORD_QUALITIES.maj;
+      const chordTones = q.intervals.map((iv) => (cRoot + iv) % 12);
+
+      let score = 0;
+      for (let pc = 0; pc < 12; pc++) {
+        if (chroma[pc] === 0) continue;
+        if (pc === chordTones[0]) score += chroma[pc] * 2.2;      // Root match
+        else if (pc === chordTones[1]) score += chroma[pc] * 1.9; // 3rd match
+        else if (pc === chordTones[2]) score += chroma[pc] * 1.6; // 5th match
+        else score -= chroma[pc] * 0.45;
+      }
+
+      // Encourage resolution to Tonic on first and last bars
+      if ((b === 0 || b === numBars - 1) && cand.degree === 0) {
+        score += barEnergy * 0.65;
+      }
+      // Slight penalty for repeating the exact same chord twice in a row (for musical movement)
+      const key = `${cRoot}_${cand.quality}`;
+      if (key === prevChordKey && b < numBars - 1) {
+        score -= barEnergy * 0.35;
+      }
+
+      if (score > bestChordScore) {
+        bestChordScore = score;
+        bestChord = cand;
+      }
+    }
+
+    const chosenRoot = (bestRoot + bestChord.degree) % 12;
+    prevChordKey = `${chosenRoot}_${bestChord.quality}`;
+    chords.push({
+      bar: b + 1,
+      rootPc: chosenRoot,
+      quality: bestChord.quality,
+      name: formatChordName(chosenRoot, bestChord.quality),
+    });
+  }
+
+  return {
+    rootPc: bestRoot,
+    scaleId: bestScale.id,
+    confidence,
+    voicedFrames,
+    barSec,
+    chords,
+  };
+}
+
+/**
+ * Generate a musical default chord progression for a given Key, Scale, and bar count.
+ */
+function buildDefaultProgression(rootPc = 2, scaleId = 'hijaz', numBars = 8) {
+  const scale = SCALES[scaleId] || SCALES.minor;
+  const chords = [];
+  for (let b = 0; b < numBars; b++) {
+    const idx = scale.defaultProg[b % scale.defaultProg.length];
+    const cDef = scale.chords[idx % scale.chords.length];
+    const cRoot = (rootPc + cDef.degree) % 12;
+    chords.push({
+      bar: b + 1,
+      rootPc: cRoot,
+      quality: cDef.quality,
+      name: formatChordName(cRoot, cDef.quality),
+    });
+  }
+  return chords;
+}
+
+/**
+ * Render a complete studio-quality multi-instrument + rhythm backing AudioBuffer
+ * following the composed chord progression.
+ */
+async function renderComposedArrangement({
+  chords,
+  bpm = 100,
+  beatsPerBar = 4,
+  playStyle = 'ballad',
+  rhythmStyle = 'maqsum',
+  rhythmVolume = 0.72,
+  instruments = {
+    piano: { enabled: true, volume: 0.75 },
+    guitar: { enabled: false, volume: 0.65 },
+    oud: { enabled: true, volume: 0.70 },
+    strings: { enabled: true, volume: 0.55 },
+    bass: { enabled: true, volume: 0.78 },
+    synth: { enabled: false, volume: 0.55 },
+  },
+}) {
+  const sr = 44100;
+  const beatSec = 60 / clamp(bpm, 50, 200);
+  const barSec = beatSec * beatsPerBar;
+  const totalSec = chords.length * barSec + 1.8; // Ring-out tail
+  const off = new OfflineAudioContext(2, Math.ceil(sr * totalSec), sr);
+
+  // Master Arrangement Bus + Warm Studio Reverb
+  const bus = off.createGain();
+  bus.gain.value = 0.78;
+  const busComp = off.createDynamicsCompressor();
+  busComp.threshold.value = -14;
+  busComp.ratio.value = 2.6;
+  busComp.attack.value = 0.015;
+  busComp.release.value = 0.18;
+
+  const rev = off.createConvolver();
+  rev.buffer = createReverbIR(off, 'studio', 1.8);
+  const revSend = off.createGain();
+  revSend.gain.value = 0.28;
+
+  bus.connect(busComp);
+  busComp.connect(off.destination);
+  revSend.connect(rev);
+  rev.connect(busComp);
+
+  const midiToFreq = (m) => 440 * Math.pow(2, (m - 69) / 12);
+
+  // =========================================================================
+  // Instrument Synthesizers
+  // =========================================================================
+
+  // 1. Grand / Electric Piano
+  const playPianoNote = (time, midi, dur, vol, panVal = 0) => {
+    const f = midiToFreq(midi);
+    const osc1 = off.createOscillator();
+    const osc2 = off.createOscillator();
+    const osc3 = off.createOscillator();
+    osc1.type = 'triangle';
+    osc2.type = 'sine';
+    osc3.type = 'sine';
+    osc1.frequency.setValueAtTime(f, time);
+    osc2.frequency.setValueAtTime(f * 2, time);
+    osc3.frequency.setValueAtTime(f * 3, time);
+
+    const g2 = off.createGain(); g2.gain.value = 0.34;
+    const g3 = off.createGain(); g3.gain.value = 0.12;
+
+    const lp = off.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.setValueAtTime(Math.min(5800, f * 9), time);
+    lp.frequency.exponentialRampToValueAtTime(Math.max(420, f * 2.2), time + dur);
+
+    const env = off.createGain();
+    env.gain.setValueAtTime(0.0008, time);
+    env.gain.linearRampToValueAtTime(vol, time + 0.01);
+    env.gain.exponentialRampToValueAtTime(vol * 0.42, time + Math.min(0.35, dur * 0.4));
+    env.gain.exponentialRampToValueAtTime(0.0008, time + dur);
+
+    const pan = off.createStereoPanner();
+    pan.pan.value = panVal;
+
+    osc1.connect(lp);
+    osc2.connect(g2); g2.connect(lp);
+    osc3.connect(g3); g3.connect(lp);
+    lp.connect(env);
+    env.connect(pan);
+    pan.connect(bus);
+    pan.connect(revSend);
+
+    osc1.start(time); osc2.start(time); osc3.start(time);
+    osc1.stop(time + dur + 0.05); osc2.stop(time + dur + 0.05); osc3.stop(time + dur + 0.05);
+  };
+
+  // 2. Acoustic Guitar (Bright Plucked Harmonics with strum feel)
+  const playGuitarNote = (time, midi, dur, vol, panVal = 0) => {
+    const f = midiToFreq(midi);
+    const osc1 = off.createOscillator();
+    const osc2 = off.createOscillator();
+    osc1.type = 'sawtooth';
+    osc2.type = 'triangle';
+    osc1.frequency.setValueAtTime(f, time);
+    osc2.frequency.setValueAtTime(f * 2, time);
+    osc2.detune.value = 3;
+
+    const bp = off.createBiquadFilter();
+    bp.type = 'lowpass';
+    bp.frequency.setValueAtTime(4200, time);
+    bp.frequency.exponentialRampToValueAtTime(680, time + Math.min(1.1, dur));
+    bp.Q.value = 1.4;
+
+    const env = off.createGain();
+    env.gain.setValueAtTime(0.001, time);
+    env.gain.linearRampToValueAtTime(vol, time + 0.006);
+    env.gain.exponentialRampToValueAtTime(0.001, time + dur);
+
+    const mix2 = off.createGain(); mix2.gain.value = 0.25;
+    const pan = off.createStereoPanner(); pan.pan.value = panVal;
+
+    osc1.connect(bp);
+    osc2.connect(mix2); mix2.connect(bp);
+    bp.connect(env);
+    env.connect(pan);
+    pan.connect(bus);
+    pan.connect(revSend);
+
+    osc1.start(time); osc2.start(time);
+    osc1.stop(time + dur + 0.05); osc2.stop(time + dur + 0.05);
+  };
+
+  // 3. Oriental Oud (Warm Woody Double-String Resonance)
+  const playOudNote = (time, midi, dur, vol, panVal = 0.2) => {
+    const f = midiToFreq(midi);
+    const oscA = off.createOscillator();
+    const oscB = off.createOscillator();
+    oscA.type = 'sawtooth';
+    oscB.type = 'triangle';
+    oscA.frequency.setValueAtTime(f, time);
+    oscB.frequency.setValueAtTime(f, time);
+    oscB.detune.value = -7; // Characteristic double-course chorus
+
+    // Woody body resonance filter
+    const body = off.createBiquadFilter();
+    body.type = 'peaking';
+    body.frequency.value = 440;
+    body.Q.value = 2.0;
+    body.gain.value = 5.5;
+
+    const lp = off.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.setValueAtTime(2600, time);
+    lp.frequency.exponentialRampToValueAtTime(480, time + dur);
+
+    const env = off.createGain();
+    env.gain.setValueAtTime(0.001, time);
+    env.gain.linearRampToValueAtTime(vol, time + 0.009);
+    env.gain.exponentialRampToValueAtTime(0.001, time + dur);
+
+    const pan = off.createStereoPanner();
+    pan.pan.value = panVal;
+
+    oscA.connect(body);
+    oscB.connect(body);
+    body.connect(lp);
+    lp.connect(env);
+    env.connect(pan);
+    pan.connect(bus);
+    pan.connect(revSend);
+
+    oscA.start(time); oscB.start(time);
+    oscA.stop(time + dur + 0.05); oscB.stop(time + dur + 0.05);
+  };
+
+  // 4. Lush Cinematic Strings Pad
+  const playStringsChord = (time, midis, dur, vol) => {
+    midis.forEach((m, idx) => {
+      [-9, 9].forEach((det) => {
+        const osc = off.createOscillator();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(midiToFreq(m + 12), time);
+        osc.detune.value = det;
+
+        const lp = off.createBiquadFilter();
+        lp.type = 'lowpass';
+        lp.frequency.value = 1850;
+        lp.Q.value = 0.7;
+
+        const env = off.createGain();
+        const voiceVol = vol / (midis.length * 2.4);
+        env.gain.setValueAtTime(0.0005, time);
+        env.gain.linearRampToValueAtTime(voiceVol, time + Math.min(0.45, dur * 0.25));
+        env.gain.setValueAtTime(voiceVol, time + Math.max(0.1, dur - 0.35));
+        env.gain.exponentialRampToValueAtTime(0.0005, time + dur + 0.15);
+
+        const pan = off.createStereoPanner();
+        pan.pan.value = (idx - (midis.length - 1) / 2) * 0.36 + (det > 0 ? 0.12 : -0.12);
+
+        osc.connect(lp);
+        lp.connect(env);
+        env.connect(pan);
+        pan.connect(bus);
+        pan.connect(revSend);
+
+        osc.start(time);
+        osc.stop(time + dur + 0.2);
+      });
+    });
+  };
+
+  // 5. Deep Warm Bass
+  const playBassNote = (time, midi, dur, vol) => {
+    const f = midiToFreq(midi);
+    const osc1 = off.createOscillator();
+    const osc2 = off.createOscillator();
+    osc1.type = 'sine';
+    osc2.type = 'triangle';
+    osc1.frequency.setValueAtTime(f, time);
+    osc2.frequency.setValueAtTime(f, time);
+
+    const lp = off.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = 340;
+
+    const env = off.createGain();
+    env.gain.setValueAtTime(0.001, time);
+    env.gain.linearRampToValueAtTime(vol, time + 0.018);
+    env.gain.exponentialRampToValueAtTime(vol * 0.65, time + dur * 0.5);
+    env.gain.exponentialRampToValueAtTime(0.001, time + dur);
+
+    const g2 = off.createGain(); g2.gain.value = 0.45;
+    osc1.connect(env);
+    osc2.connect(lp); lp.connect(g2); g2.connect(env);
+    env.connect(bus);
+
+    osc1.start(time); osc2.start(time);
+    osc1.stop(time + dur + 0.05); osc2.stop(time + dur + 0.05);
+  };
+
+  // 6. Modern Warm Synth Pad / Pluck
+  const playSynthChord = (time, midis, dur, vol) => {
+    midis.forEach((m, idx) => {
+      const osc = off.createOscillator();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(midiToFreq(m), time);
+      osc.detune.value = idx % 2 === 0 ? -6 : 6;
+
+      const lp = off.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.setValueAtTime(2400, time);
+      lp.frequency.exponentialRampToValueAtTime(850, time + dur);
+      lp.Q.value = 1.8;
+
+      const env = off.createGain();
+      const voiceVol = vol / (midis.length * 1.4);
+      env.gain.setValueAtTime(0.001, time);
+      env.gain.linearRampToValueAtTime(voiceVol, time + 0.04);
+      env.gain.exponentialRampToValueAtTime(0.001, time + dur);
+
+      const pan = off.createStereoPanner();
+      pan.pan.value = (idx - (midis.length - 1) / 2) * 0.35;
+
+      osc.connect(lp);
+      lp.connect(env);
+      env.connect(pan);
+      pan.connect(bus);
+      pan.connect(revSend);
+
+      osc.start(time);
+      osc.stop(time + dur + 0.08);
+    });
+  };
+
+  // =========================================================================
+  // Drum & Percussion Synthesizers
+  // =========================================================================
+  const makeNoiseBuf = (durSec) => {
+    const len = Math.max(64, Math.floor(sr * durSec));
+    const buf = off.createBuffer(1, len, sr);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) {
+      d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (len * 0.28));
+    }
+    return buf;
+  };
+
+  const playKick = (time, vol = 0.65, lowHz = 44, dur = 0.28) => {
+    const osc = off.createOscillator();
+    const g = off.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(145, time);
+    osc.frequency.exponentialRampToValueAtTime(lowHz, time + 0.11);
+    g.gain.setValueAtTime(vol, time);
+    g.gain.exponentialRampToValueAtTime(0.001, time + dur);
+    osc.connect(g);
+    g.connect(bus);
+    osc.start(time);
+    osc.stop(time + dur + 0.02);
+  };
+
+  const playDoum = (time, vol = 0.62) => {
+    // Deep resonant Darbuka Doum
+    const osc = off.createOscillator();
+    const g = off.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(155, time);
+    osc.frequency.exponentialRampToValueAtTime(76, time + 0.16);
+    g.gain.setValueAtTime(vol, time);
+    g.gain.exponentialRampToValueAtTime(0.001, time + 0.28);
+    osc.connect(g);
+    g.connect(bus);
+    g.connect(revSend);
+    osc.start(time);
+    osc.stop(time + 0.3);
+  };
+
+  const playTek = (time, vol = 0.24, freq = 2300, decay = 0.075) => {
+    const src = off.createBufferSource();
+    src.buffer = makeNoiseBuf(decay);
+    const bp = off.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = freq;
+    bp.Q.value = 2.0;
+    const g = off.createGain();
+    g.gain.value = vol;
+    src.connect(bp); bp.connect(g);
+    g.connect(bus); g.connect(revSend);
+    src.start(time);
+  };
+
+  const playSnare = (time, vol = 0.34) => {
+    playTek(time, vol, 1450, 0.14);
+    const osc = off.createOscillator();
+    const g = off.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(210, time);
+    osc.frequency.exponentialRampToValueAtTime(115, time + 0.08);
+    g.gain.setValueAtTime(vol * 0.55, time);
+    g.gain.exponentialRampToValueAtTime(0.001, time + 0.11);
+    osc.connect(g); g.connect(bus);
+    osc.start(time); osc.stop(time + 0.12);
+  };
+
+  const playHat = (time, vol = 0.11, open = false) => {
+    playTek(time, vol, 7800, open ? 0.16 : 0.04);
+  };
+
+  // =========================================================================
+  // Schedule Chords, Instruments & Rhythm Bar by Bar
+  // =========================================================================
+  const eighth = beatSec / 2;
+  const totalEighths = beatsPerBar * 2;
+
+  chords.forEach((chord, barIdx) => {
+    const t0 = barIdx * barSec;
+    const chordNotes = getChordMidiNotes(chord.rootPc, chord.quality, 48);
+    const bassMidi = 36 + (((chord.rootPc % 12) + 12) % 12);
+    const bassFixed = bassMidi > 45 ? bassMidi - 12 : bassMidi;
+
+    // --- PIANO ---
+    if (instruments.piano?.enabled && instruments.piano.volume > 0.01) {
+      const v = instruments.piano.volume * 0.28;
+      if (playStyle === 'arpeggio') {
+        const arpSeq = [...chordNotes, chordNotes[0] + 12, ...chordNotes.slice().reverse()];
+        for (let s = 0; s < totalEighths; s++) {
+          const note = arpSeq[s % arpSeq.length];
+          playPianoNote(t0 + s * eighth, note, eighth * 2.2, v, (s % 2 === 0 ? -0.25 : 0.25));
+        }
+      } else if (playStyle === 'groove') {
+        for (let b = 0; b < beatsPerBar; b++) {
+          const vel = b === 0 ? v : v * 0.72;
+          chordNotes.forEach((n, idx) => {
+            playPianoNote(t0 + b * beatSec + idx * 0.01, n, beatSec * 0.85, vel / chordNotes.length * 1.8, (idx - 1) * 0.2);
+          });
+        }
+      } else {
+        // Ballad or Oriental warm spread chord on beat 1 and gentle re-touch halfway
+        chordNotes.forEach((n, idx) => {
+          playPianoNote(t0 + idx * 0.022, n, barSec * 0.95, v * 0.85, (idx - 1) * 0.25);
+        });
+        if (beatsPerBar >= 4) {
+          chordNotes.slice(1).forEach((n, idx) => {
+            playPianoNote(t0 + beatSec * 2 + idx * 0.018, n + 12, beatSec * 1.9, v * 0.48, (idx % 2 === 0 ? -0.3 : 0.3));
+          });
+        }
+      }
+    }
+
+    // --- ACOUSTIC GUITAR ---
+    if (instruments.guitar?.enabled && instruments.guitar.volume > 0.01) {
+      const v = instruments.guitar.volume * 0.24;
+      const gNotes = [chordNotes[0], chordNotes[2], chordNotes[0] + 12, chordNotes[1] + 12];
+      if (playStyle === 'arpeggio' || playStyle === 'ballad') {
+        for (let s = 0; s < totalEighths; s++) {
+          const note = gNotes[s % gNotes.length];
+          playGuitarNote(t0 + s * eighth, note, eighth * 2.6, v * (s === 0 ? 1 : 0.78), -0.32);
+        }
+      } else {
+        // Rhythmic strumming pattern
+        const strumSlots = beatsPerBar === 3 ? [0, 2, 3, 4] : [0, 2, 3, 5, 6];
+        strumSlots.forEach((slot) => {
+          if (slot >= totalEighths) return;
+          const down = slot % 2 === 0;
+          const ordered = down ? gNotes : gNotes.slice().reverse();
+          ordered.forEach((n, idx) => {
+            playGuitarNote(t0 + slot * eighth + idx * 0.014, n, eighth * 2.1, v * (down ? 0.72 : 0.52), -0.28);
+          });
+        });
+      }
+    }
+
+    // --- ORIENTAL OUD ---
+    if (instruments.oud?.enabled && instruments.oud.volume > 0.01) {
+      const v = instruments.oud.volume * 0.28;
+      const oudNotes = [chordNotes[0] + 12, chordNotes[1] + 12, chordNotes[2] + 12, chordNotes[0] + 24];
+      const pattern = playStyle === 'oriental'
+        ? [0, 1, 2, 3, 2, 1, 2, 0]
+        : [0, 2, 1, 2, 3, 2, 1, 0];
+      for (let s = 0; s < totalEighths; s++) {
+        if (playStyle === 'ballad' && s % 2 === 1 && s !== totalEighths - 1) continue;
+        const note = oudNotes[pattern[s % pattern.length] % oudNotes.length];
+        playOudNote(t0 + s * eighth, note, eighth * 2.1, v * (s === 0 ? 1.0 : 0.78), 0.34);
+      }
+    }
+
+    // --- STRINGS PAD ---
+    if (instruments.strings?.enabled && instruments.strings.volume > 0.01) {
+      playStringsChord(t0, chordNotes, barSec, instruments.strings.volume * 0.32);
+    }
+
+    // --- BASS ---
+    if (instruments.bass?.enabled && instruments.bass.volume > 0.01) {
+      const v = instruments.bass.volume * 0.38;
+      if (playStyle === 'groove' || playStyle === 'oriental') {
+        playBassNote(t0, bassFixed, beatSec * 1.4, v);
+        if (beatsPerBar >= 4) {
+          playBassNote(t0 + beatSec * 1.5, bassFixed + 7, beatSec * 0.5, v * 0.72);
+          playBassNote(t0 + beatSec * 2, bassFixed, beatSec * 1.5, v * 0.9);
+          playBassNote(t0 + beatSec * 3.5, bassFixed + 7, beatSec * 0.45, v * 0.7);
+        }
+      } else {
+        playBassNote(t0, bassFixed, barSec * 0.92, v);
+      }
+    }
+
+    // --- MODERN SYNTH ---
+    if (instruments.synth?.enabled && instruments.synth.volume > 0.01) {
+      const v = instruments.synth.volume * 0.25;
+      if (playStyle === 'groove') {
+        playSynthChord(t0, chordNotes, beatSec * 1.8, v);
+        if (beatsPerBar >= 4) playSynthChord(t0 + beatSec * 2, chordNotes, beatSec * 1.8, v * 0.85);
+      } else {
+        playSynthChord(t0, chordNotes, barSec * 0.95, v);
+      }
+    }
+
+    // --- RHYTHM / DRUMS ---
+    if (rhythmStyle !== 'none' && rhythmVolume > 0.01) {
+      const rv = rhythmVolume;
+      if (rhythmStyle === 'maqsum') {
+        // Classic Maqsum: Doum - Tek - - Tek - Doum - Tek -
+        playDoum(t0, 0.72 * rv);
+        playTek(t0 + eighth * 1, 0.28 * rv, 2250, 0.07);
+        playTek(t0 + eighth * 3, 0.26 * rv, 2400, 0.075);
+        if (totalEighths >= 6) playDoum(t0 + eighth * 4, 0.65 * rv);
+        if (totalEighths >= 7) playTek(t0 + eighth * 6, 0.30 * rv, 2100, 0.08);
+        if (totalEighths >= 8) playTek(t0 + eighth * 7, 0.16 * rv, 5400, 0.04);
+      } else if (rhythmStyle === 'saidi') {
+        // Saidi: Doum - Tek - - Doum - Doum - Tek -
+        playDoum(t0, 0.75 * rv);
+        playTek(t0 + eighth * 1, 0.26 * rv, 2200, 0.07);
+        playDoum(t0 + eighth * 3, 0.68 * rv);
+        if (totalEighths >= 6) playDoum(t0 + eighth * 4, 0.74 * rv);
+        if (totalEighths >= 7) playTek(t0 + eighth * 6, 0.30 * rv, 2300, 0.08);
+        if (totalEighths >= 8) playTek(t0 + eighth * 7, 0.14 * rv, 5600, 0.04);
+      } else if (rhythmStyle === 'pop') {
+        playKick(t0, 0.72 * rv);
+        if (totalEighths >= 6) playKick(t0 + eighth * 4, 0.66 * rv);
+        if (totalEighths >= 4) playSnare(t0 + eighth * 2, 0.36 * rv);
+        if (totalEighths >= 8) playSnare(t0 + eighth * 6, 0.36 * rv);
+        for (let s = 0; s < totalEighths; s++) {
+          playHat(t0 + s * eighth, (s % 2 === 0 ? 0.12 : 0.07) * rv);
+        }
+      } else if (rhythmStyle === 'lofi') {
+        playKick(t0, 0.68 * rv, 48, 0.25);
+        if (totalEighths >= 5) playKick(t0 + eighth * 3.5, 0.56 * rv, 48, 0.22);
+        if (totalEighths >= 4) playSnare(t0 + eighth * 2, 0.28 * rv);
+        if (totalEighths >= 8) playSnare(t0 + eighth * 6, 0.28 * rv);
+        for (let s = 0; s < totalEighths; s++) {
+          playHat(t0 + s * eighth + (s % 2 === 1 ? 0.015 : 0), 0.075 * rv);
+        }
+      } else if (rhythmStyle === 'trap') {
+        playKick(t0, 0.80 * rv, 36, 0.42);
+        if (totalEighths >= 6) playKick(t0 + eighth * 5, 0.70 * rv, 36, 0.35);
+        if (totalEighths >= 5) playSnare(t0 + eighth * 4, 0.40 * rv);
+        // Fast trap hi-hats (16ths)
+        for (let h = 0; h < totalEighths * 2; h++) {
+          const accent = h % 4 === 0 ? 0.11 : 0.06;
+          playHat(t0 + h * (eighth / 2), accent * rv);
+        }
+      } else if (rhythmStyle === 'acoustic') {
+        playKick(t0, 0.55 * rv, 52, 0.22);
+        if (totalEighths >= 6) playKick(t0 + eighth * 4, 0.48 * rv, 52, 0.20);
+        for (let s = 0; s < totalEighths; s++) {
+          playTek(t0 + s * eighth, (s % 2 === 0 ? 0.11 : 0.06) * rv, 6200, 0.045);
+        }
+      }
+    }
+  });
+
+  return await off.startRendering();
 }
 
 /**
@@ -4308,7 +6331,10 @@ class StereoVuMeter {
 
 /**
  * Nagham Studio — Main UI Controller & Application Orchestration
+ * Includes: Multi-Track Recording, A Cappella Mode, Precision Metronome,
+ * Creative Vocal FX & Harmony, Smart Auto-Composer, Mastering, and MP3 Export
  */
+
 
 
 
@@ -4324,8 +6350,14 @@ let countInCancelled = false;
 let isCountingIn = false;
 let lastExportUrl = null;
 let restartDebounceTimer = null;
+let lastRecordingWasAcapella = false;
+let tapTimes = [];
 
-// DOM Helpers
+// Smart Auto-Composer State
+let composedChords = buildDefaultProgression(2, 'hijaz', 8); // Default D Hijaz 8 bars
+let detectedScaleId = 'hijaz';
+let detectedRootPc = 2;
+
 const $ = (id) => document.getElementById(id);
 
 function formatTime(sec) {
@@ -4363,7 +6395,7 @@ function showToast(message, type = 'info') {
     el.style.opacity = '0';
     el.style.transition = 'opacity 0.25s ease';
     setTimeout(() => el.remove(), 260);
-  }, 3600);
+  }, 4000);
 }
 
 // ==========================================================================
@@ -4392,19 +6424,109 @@ $('btnQuickExport').addEventListener('click', () => {
   $('panel-export').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 });
 
+$('btnOpenComposerFromTrack').addEventListener('click', () => {
+  switchTab('composer');
+  $('panel-composer').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+});
+
 // ==========================================================================
-// Populate Demo Beats & Presets
+// Live Metronome Controls (Toggle/Mute, BPM, Tap Tempo, Time Sig, Volume)
+// ==========================================================================
+function renderMetronomeLeds(beatsPerBar, activeIdx = -1) {
+  const wrap = $('metroBeatLeds');
+  if (wrap.children.length !== beatsPerBar) {
+    wrap.innerHTML = '';
+    for (let i = 0; i < beatsPerBar; i++) {
+      const dot = document.createElement('span');
+      dot.className = 'beat-led';
+      wrap.appendChild(dot);
+    }
+  }
+  Array.from(wrap.children).forEach((dot, idx) => {
+    dot.classList.remove('lit', 'lit-accent');
+    if (idx === activeIdx) {
+      dot.classList.add(idx === 0 ? 'lit-accent' : 'lit');
+    }
+  });
+}
+
+function updateMetronomeUI() {
+  const m = engine.state.metronome;
+  const btn = $('btnMetronomeToggle');
+  btn.classList.toggle('active', m.enabled);
+  $('metroToggleLabel').textContent = m.enabled ? 'المترونوم: شغّال' : 'المترونوم: مكتوم';
+  $('inpBpm').value = m.bpm;
+  $('selTimeSig').value = String(m.beatsPerBar);
+  $('rngMetroVol').value = Math.round(m.volume * 100);
+  $('valMetroVol').textContent = `${Math.round(m.volume * 100)}%`;
+  $('compBpmMirror').textContent = `${m.bpm} BPM`;
+  if (!m.enabled) renderMetronomeLeds(m.beatsPerBar, -1);
+}
+
+engine.onMetronomeBeat = (beatIdx, beatsPerBar) => {
+  renderMetronomeLeds(beatsPerBar, beatIdx);
+  setTimeout(() => {
+    if (!engine.state.metronome.enabled) renderMetronomeLeds(beatsPerBar, -1);
+  }, 140);
+};
+
+$('btnMetronomeToggle').addEventListener('click', () => {
+  engine.setMetronomeEnabled(!engine.state.metronome.enabled);
+  updateMetronomeUI();
+});
+
+function setBpmValue(val) {
+  const clean = clamp(Math.round(Number(val) || 100), 50, 180);
+  engine.setMetronomeBpm(clean);
+  updateMetronomeUI();
+}
+
+$('inpBpm').addEventListener('change', (e) => setBpmValue(e.target.value));
+$('btnBpmDown').addEventListener('click', () => setBpmValue(engine.state.metronome.bpm - 2));
+$('btnBpmUp').addEventListener('click', () => setBpmValue(engine.state.metronome.bpm + 2));
+
+$('btnTapTempo').addEventListener('click', () => {
+  const now = performance.now();
+  if (tapTimes.length > 0 && now - tapTimes[tapTimes.length - 1] > 2200) {
+    tapTimes = [];
+  }
+  tapTimes.push(now);
+  if (tapTimes.length > 5) tapTimes.shift();
+  if (tapTimes.length >= 2) {
+    let sum = 0;
+    for (let i = 1; i < tapTimes.length; i++) sum += tapTimes[i] - tapTimes[i - 1];
+    const avgMs = sum / (tapTimes.length - 1);
+    const bpm = Math.round(60000 / avgMs);
+    setBpmValue(bpm);
+  }
+  engine.playMetronomeClick(tapTimes.length === 1);
+});
+
+$('selTimeSig').addEventListener('change', (e) => {
+  const beats = parseInt(e.target.value, 10) || 4;
+  engine.setMetronomeBeatsPerBar(beats);
+  renderMetronomeLeds(beats, -1);
+  updateMetronomeUI();
+});
+
+$('rngMetroVol').addEventListener('input', (e) => {
+  const pct = parseInt(e.target.value, 10) || 0;
+  engine.setMetronomeVolume(pct / 100);
+  $('valMetroVol').textContent = `${pct}%`;
+});
+
+// ==========================================================================
+// Populate Demo Beats, Presets & Smart Auto-Composer UI
 // ==========================================================================
 function initDemoBeatsAndPresets() {
   const demoSel = $('selectDemoBeat');
   DEMO_BEATS.forEach((b) => {
     const opt = document.createElement('option');
     opt.value = b.id;
-    opt.textContent = `${b.name} (${b.bpm} BPM • ${b.key})`;
+    opt.textContent = `${b.name} (${b.bpm} BPM)`;
     demoSel.appendChild(opt);
   });
 
-  // Vocal Presets
   const vocalGrid = $('vocalPresetsGrid');
   VOCAL_PRESETS.forEach((p) => {
     const btn = document.createElement('button');
@@ -4416,7 +6538,6 @@ function initDemoBeatsAndPresets() {
     vocalGrid.appendChild(btn);
   });
 
-  // Master Presets
   const masterGrid = $('masterPresetsGrid');
   MASTER_PRESETS.forEach((p) => {
     const btn = document.createElement('button');
@@ -4426,10 +6547,42 @@ function initDemoBeatsAndPresets() {
     btn.addEventListener('click', () => applyMasterPreset(p));
     masterGrid.appendChild(btn);
   });
+
+  // Populate Auto-Composer selects
+  const rootSel = $('compRootSelect');
+  NOTE_NAMES_AR.forEach((label, idx) => {
+    const opt = document.createElement('option');
+    opt.value = String(idx);
+    opt.textContent = label;
+    rootSel.appendChild(opt);
+  });
+
+  const playStyleSel = $('compPlayStyle');
+  PLAY_STYLES.forEach((s) => {
+    const opt = document.createElement('option');
+    opt.value = s.id;
+    opt.textContent = s.name;
+    playStyleSel.appendChild(opt);
+  });
+
+  const rhythmSel = $('compRhythmSelect');
+  RHYTHM_STYLES.forEach((r) => {
+    const opt = document.createElement('option');
+    opt.value = r.id;
+    opt.textContent = r.name;
+    if (r.id === 'maqsum') opt.selected = true;
+    rhythmSel.appendChild(opt);
+  });
+
+  renderChordsGrid();
 }
 
 function applyVocalPreset(preset) {
   activeVocalPresetId = preset.id;
+  const harmonyChanged =
+    engine.state.vocalFx.harmonyEnabled !== preset.fx.harmonyEnabled ||
+    engine.state.vocalFx.harmonyInterval !== preset.fx.harmonyInterval;
+
   Object.assign(engine.state.vocalFx, preset.fx);
   engine.state.vocal.fxEnabled = preset.id !== 'flat_raw';
   engine._invalidateGatedVocal();
@@ -4439,7 +6592,8 @@ function applyVocalPreset(preset) {
   });
 
   syncControlsFromState();
-  engine.syncLiveParams({ reverbIRChanged: true, warmthChanged: true });
+  engine.syncLiveParams({ reverbIRChanged: true, warmthChanged: true, driveChanged: true, eqToggleChanged: true });
+  if (harmonyChanged) schedulePlaybackRefresh();
   drawEqCurve($('eqCurveCanvas'), engine);
   showToast(`تم تطبيق قالب الصوت: ${preset.name}`, 'success');
 }
@@ -4458,7 +6612,205 @@ function applyMasterPreset(preset) {
 }
 
 // ==========================================================================
-// Track Loading (File Upload, Drag & Drop, Built-In Demo Beats)
+// Smart Auto-Composer Logic (Analyze Vocal -> Chords -> Instruments + Rhythm)
+// ==========================================================================
+function renderChordsGrid() {
+  const grid = $('chordsTimelineGrid');
+  grid.innerHTML = '';
+
+  const qualityEntries = Object.entries(CHORD_QUALITIES);
+
+  composedChords.forEach((chord, idx) => {
+    const card = document.createElement('div');
+    card.className = 'chord-card';
+
+    const top = document.createElement('div');
+    top.className = 'chord-card-top';
+    top.innerHTML = `<span>مازورة ${idx + 1}</span>`;
+
+    const nameEl = document.createElement('div');
+    nameEl.className = 'chord-card-name';
+    nameEl.textContent = formatChordName(chord.rootPc, chord.quality);
+
+    const selects = document.createElement('div');
+    selects.className = 'chord-card-selects';
+
+    const selRoot = document.createElement('select');
+    selRoot.className = 'studio-select';
+    NOTE_NAMES.forEach((n, pc) => {
+      const opt = document.createElement('option');
+      opt.value = String(pc);
+      opt.textContent = n;
+      if (pc === chord.rootPc) opt.selected = true;
+      selRoot.appendChild(opt);
+    });
+    selRoot.addEventListener('change', (e) => {
+      chord.rootPc = parseInt(e.target.value, 10);
+      chord.name = formatChordName(chord.rootPc, chord.quality);
+      nameEl.textContent = chord.name;
+    });
+
+    const selQual = document.createElement('select');
+    selQual.className = 'studio-select';
+    qualityEntries.forEach(([qKey, qObj]) => {
+      const opt = document.createElement('option');
+      opt.value = qKey;
+      opt.textContent = qObj.suffix || 'maj';
+      if (qKey === chord.quality) opt.selected = true;
+      selQual.appendChild(opt);
+    });
+    selQual.addEventListener('change', (e) => {
+      chord.quality = e.target.value;
+      chord.name = formatChordName(chord.rootPc, chord.quality);
+      nameEl.textContent = chord.name;
+    });
+
+    selects.appendChild(selRoot);
+    selects.appendChild(selQual);
+    card.appendChild(top);
+    card.appendChild(nameEl);
+    card.appendChild(selects);
+    grid.appendChild(card);
+  });
+}
+
+function getComposerInstrumentsConfig() {
+  return {
+    piano:   { enabled: $('instPianoOn').checked,   volume: Number($('instPianoVol').value) / 100 },
+    guitar:  { enabled: $('instGuitarOn').checked,  volume: Number($('instGuitarVol').value) / 100 },
+    oud:     { enabled: $('instOudOn').checked,     volume: Number($('instOudVol').value) / 100 },
+    strings: { enabled: $('instStringsOn').checked, volume: Number($('instStringsVol').value) / 100 },
+    bass:    { enabled: $('instBassOn').checked,    volume: Number($('instBassVol').value) / 100 },
+    synth:   { enabled: $('instSynthOn').checked,   volume: Number($('instSynthVol').value) / 100 },
+  };
+}
+
+// Instrument volume live labels
+[
+  ['instPianoVol', 'valInstPiano'],
+  ['instGuitarVol', 'valInstGuitar'],
+  ['instOudVol', 'valInstOud'],
+  ['instStringsVol', 'valInstStrings'],
+  ['instBassVol', 'valInstBass'],
+  ['instSynthVol', 'valInstSynth'],
+  ['compRhythmVol', 'valCompRhythmVol'],
+].forEach(([rngId, valId]) => {
+  $(rngId).addEventListener('input', (e) => {
+    $(valId).textContent = `${e.target.value}%`;
+  });
+});
+
+$('btnRebuildDefaultChords').addEventListener('click', () => {
+  const rootSelVal = parseInt($('compRootSelect').value, 10);
+  const scaleSelVal = $('compScaleSelect').value;
+  const numBars = parseInt($('compNumBars').value, 10) || 8;
+  const root = rootSelVal >= 0 ? rootSelVal : detectedRootPc;
+  const scaleId = scaleSelVal !== 'auto' ? scaleSelVal : detectedScaleId;
+
+  composedChords = buildDefaultProgression(root, scaleId, numBars);
+  renderChordsGrid();
+  const sName = SCALES[scaleId]?.name || scaleId;
+  $('detectedKeyBadge').textContent = `المقام المختار: ${NOTE_NAMES_AR[root]} • ${sName}`;
+  showToast('تم تحديث خريطة الكوردات حسب المقام المختار.', 'info');
+});
+
+function runVocalAnalysis() {
+  if (!engine.activeVocalBuffer) {
+    showToast('سجّل صوت غناء أولاً (بزر «غناء بدون موسيقى») أو اختر المقام يدوياً واضغط «توليد التوزيع».', 'info');
+    return false;
+  }
+
+  const preferredRoot = parseInt($('compRootSelect').value, 10);
+  const preferredScaleId = $('compScaleSelect').value;
+  const res = analyzeVocalAndComposeChords(engine.activeVocalBuffer, {
+    bpm: engine.state.metronome.bpm,
+    beatsPerBar: engine.state.metronome.beatsPerBar,
+    preferredScaleId,
+    preferredRoot,
+  });
+
+  detectedRootPc = res.rootPc;
+  detectedScaleId = res.scaleId;
+  composedChords = res.chords;
+  renderChordsGrid();
+
+  const scaleLabel = SCALES[res.scaleId]?.name || res.scaleId;
+  const confPct = Math.round(res.confidence * 100);
+  $('detectedKeyBadge').textContent = res.voicedFrames >= 4
+    ? `تم الاكتشاف: ${NOTE_NAMES_AR[res.rootPc]} • ${scaleLabel} (تطابق ${confPct}%)`
+    : `تأليف افتراضي: ${NOTE_NAMES_AR[res.rootPc]} • ${scaleLabel}`;
+
+  showToast(`تم تحليل غنائك وتأليف ${res.chords.length} مازورة كوردات على ${NOTE_NAMES_AR[res.rootPc]} (${scaleLabel})!`, 'success');
+  return true;
+}
+
+$('btnAnalyzeVocal').addEventListener('click', () => {
+  runVocalAnalysis();
+});
+
+async function handleGenerateArrangement() {
+  const instruments = getComposerInstrumentsConfig();
+  const rhythmStyle = $('compRhythmSelect').value;
+  const rhythmVolume = Number($('compRhythmVol').value) / 100;
+  const playStyle = $('compPlayStyle').value;
+
+  const anyInst = Object.values(instruments).some((i) => i.enabled && i.volume > 0.01);
+  if (!anyInst && rhythmStyle === 'none') {
+    showToast('اختر آلة موسيقية واحدة على الأقل أو اختر إيقاعاً قبل التوليد!', 'error');
+    return;
+  }
+
+  // If user recorded vocals and hasn't analyzed yet, auto-analyze first to match length & key!
+  if (engine.activeVocalBuffer && $('compRootSelect').value === '-1' && $('compScaleSelect').value === 'auto') {
+    const barSec = (60 / engine.state.metronome.bpm) * engine.state.metronome.beatsPerBar;
+    const neededBars = Math.max(4, Math.ceil(engine.activeVocalBuffer.duration / barSec));
+    if (composedChords.length !== neededBars) {
+      runVocalAnalysis();
+    }
+  }
+
+  const btn1 = $('btnGenerateArrangement');
+  const btn2 = $('btnGenerateArrangementBottom');
+  btn1.disabled = true;
+  btn2.disabled = true;
+  showToast('جاري تأليف وعزف الآلات والإيقاع بدقة استوديو...', 'info');
+
+  try {
+    engine.ensureContext();
+    const buf = await renderComposedArrangement({
+      chords: composedChords,
+      bpm: engine.state.metronome.bpm,
+      beatsPerBar: engine.state.metronome.beatsPerBar,
+      playStyle,
+      rhythmStyle,
+      rhythmVolume,
+      instruments,
+    });
+
+    const scaleName = SCALES[detectedScaleId]?.name || '';
+    const title = `توزيع مؤلَّف (${NOTE_NAMES[detectedRootPc]} ${scaleName} • ${engine.state.metronome.bpm} BPM)`;
+    engine.setBackingBuffer(buf, title);
+    backingPeaks = computeWaveformPeaks(buf, 650);
+    $('backingFileName').textContent = `${title} — ${formatTime(buf.duration)}`;
+    $('btnClearBacking').classList.remove('hidden');
+    $('selectDemoBeat').value = '';
+    updateTransportUI();
+
+    showToast('تم تأليف وتوليد التوزيع الموسيقي بنجاح! اضغط تشغيل للاستماع مع غنائك.', 'success');
+  } catch (err) {
+    console.error(err);
+    showToast(`تعذّر توليد التوزيع: ${err.message}`, 'error');
+  } finally {
+    btn1.disabled = false;
+    btn2.disabled = false;
+  }
+}
+
+$('btnGenerateArrangement').addEventListener('click', handleGenerateArrangement);
+$('btnGenerateArrangementBottom').addEventListener('click', handleGenerateArrangement);
+
+// ==========================================================================
+// Track Loading (File Upload, Drag & Drop, Demo Beats, Clear Backing)
 // ==========================================================================
 async function handleBackingLoad(file) {
   try {
@@ -4466,6 +6818,7 @@ async function handleBackingLoad(file) {
     const buf = await engine.loadBackingFile(file);
     backingPeaks = computeWaveformPeaks(buf, 650);
     $('backingFileName').textContent = `${file.name} (${formatTime(buf.duration)})`;
+    $('btnClearBacking').classList.remove('hidden');
     $('selectDemoBeat').value = '';
     updateTransportUI();
     showToast('تم إضافة الموسيقى الخلفية بنجاح!', 'success');
@@ -4488,6 +6841,16 @@ async function handleVocalLoad(file) {
     showToast('تعذّر قراءة ملف صوت الغناء.', 'error');
   }
 }
+
+$('btnClearBacking').addEventListener('click', () => {
+  engine.clearBackingTrack();
+  backingPeaks = null;
+  $('backingFileName').textContent = 'لا توجد موسيقى — يمكنك الغناء بدون موسيقى وتأليف كوردات تلقائياً';
+  $('btnClearBacking').classList.add('hidden');
+  $('selectDemoBeat').value = '';
+  updateTransportUI();
+  showToast('تم مسح الموسيقى الخلفية — يمكنك الآن الغناء بدون موسيقى.', 'info');
+});
 
 $('btnUploadBacking').addEventListener('click', () => $('backingFileInput').click());
 $('backingFileInput').addEventListener('change', (e) => {
@@ -4512,6 +6875,8 @@ $('selectDemoBeat').addEventListener('change', async (e) => {
     const buf = await engine.loadDemoBeat(id, info.name);
     backingPeaks = computeWaveformPeaks(buf, 650);
     $('backingFileName').textContent = `إيقاع مدمج: ${info.name} (${formatTime(buf.duration)})`;
+    $('btnClearBacking').classList.remove('hidden');
+    setBpmValue(info.bpm);
     updateTransportUI();
     showToast(`تم تجهيز ${info.name} — اضغط تشغيل أو ابدأ تسجيل غنائك!`, 'success');
   } catch (err) {
@@ -4520,7 +6885,6 @@ $('selectDemoBeat').addEventListener('change', async (e) => {
   }
 });
 
-// Drag & Drop support on both tracks
 document.querySelectorAll('[data-dropzone]').forEach((zone) => {
   zone.addEventListener('dragover', (e) => {
     e.preventDefault();
@@ -4579,7 +6943,7 @@ $('btnDeleteTake').addEventListener('click', () => {
 });
 
 // ==========================================================================
-// Transport & Synchronized Vocal Recording
+// Transport & Synchronized / A Cappella Vocal Recording
 // ==========================================================================
 function updateTransportUI() {
   const playing = engine.isPlaying;
@@ -4603,7 +6967,7 @@ $('btnPlayPause').addEventListener('click', () => {
     engine.pause();
   } else {
     if (!engine.backingBuffer && !engine.activeVocalBuffer) {
-      showToast('أضف موسيقى خلفية أو اختر إيقاعاً تجريبياً أولاً.', 'info');
+      showToast('سجّل غناءك أو أضف موسيقى أو ألّف كوردات من «التأليف الذكي» أولاً.', 'info');
       return;
     }
     engine.play();
@@ -4656,13 +7020,17 @@ $('chkMonitor').addEventListener('change', (e) => {
   }
 });
 
-async function runCountIn() {
+async function runCountIn(acapella = false) {
   isCountingIn = true;
   countInCancelled = false;
   const overlay = $('countInOverlay');
   const numEl = $('countInNumber');
+  $('countInLabel').textContent = acapella
+    ? 'استعد للغناء بدون موسيقى (أكابيلا)...'
+    : 'استعد للغناء...';
   overlay.classList.remove('hidden');
 
+  const beatMs = Math.round(60000 / clamp(engine.state.metronome.bpm, 50, 180));
   for (let i = 3; i >= 1; i--) {
     if (countInCancelled) {
       overlay.classList.add('hidden');
@@ -4671,7 +7039,7 @@ async function runCountIn() {
     }
     numEl.textContent = String(i);
     engine.playMetronomeClick(i === 1);
-    await new Promise((r) => setTimeout(r, 650));
+    await new Promise((r) => setTimeout(r, beatMs));
   }
 
   overlay.classList.add('hidden');
@@ -4684,13 +7052,19 @@ function finishRecording() {
   updateTransportUI();
   if (take) {
     refreshVocalTakesUI();
-    showToast(`تم حفظ "${take.name}" بنجاح! اضغط تشغيل لسماع الصوت مع الفلاتر.`, 'success');
+    if (lastRecordingWasAcapella || !engine.backingBuffer) {
+      switchTab('composer');
+      runVocalAnalysis();
+      showToast('تم حفظ غنائك وتحليله! اختر الآلات والإيقاع واضغط «توليد التوزيع» لتأليف الموسيقى على صوتك.', 'success');
+    } else {
+      showToast(`تم حفظ "${take.name}" بنجاح! اضغط تشغيل لسماع الصوت مع الإيفكتات.`, 'success');
+    }
   } else {
     showToast('التسجيل قصير جداً ولم يتم حفظه.', 'info');
   }
 }
 
-$('btnRecord').addEventListener('click', async () => {
+async function beginRecordingFlow(acapella = false) {
   if (isCountingIn) {
     countInCancelled = true;
     return;
@@ -4711,21 +7085,32 @@ $('btnRecord').addEventListener('click', async () => {
     return;
   }
 
-  const startFrom = engine.playheadSec >= engine.getDuration() - 0.5 ? 0 : engine.playheadSec;
+  lastRecordingWasAcapella = acapella;
+  const startFrom = acapella
+    ? 0
+    : (engine.playheadSec >= engine.getDuration() - 0.5 ? 0 : engine.playheadSec);
   engine.stop(false);
 
   if ($('chkCountIn').checked) {
-    const ok = await runCountIn();
+    const ok = await runCountIn(acapella);
     if (!ok) return;
   }
 
-  await engine.startRecording(startFrom);
+  await engine.startRecording(startFrom, { acapella });
   updateTransportUI();
-  showToast('بدأ التسجيل الآن... غنّ مع الموسيقى!', 'info');
-});
+  showToast(
+    acapella
+      ? 'بدأ تسجيل الغناء بدون موسيقى... غنّ بحرية ثم اضغط «إنهاء التسجيل» ليؤلّف البرنامج الكوردات!'
+      : 'بدأ التسجيل الآن... غنّ مع الموسيقى!',
+    'info'
+  );
+}
+
+$('btnRecord').addEventListener('click', () => beginRecordingFlow(false));
+$('btnRecordAcapella').addEventListener('click', () => beginRecordingFlow(true));
 
 // ==========================================================================
-// Waveform Scrubbing (Click & Drag Seek)
+// Waveform Scrubbing
 // ==========================================================================
 function bindWaveformScrub(canvas) {
   let dragging = false;
@@ -4754,7 +7139,7 @@ bindWaveformScrub($('backingWaveCanvas'));
 bindWaveformScrub($('vocalWaveCanvas'));
 
 // ==========================================================================
-// Mixer, Vocal FX, and Mastering Controls Binding
+// Mixer, Vocal FX, Creative FX & Mastering Controls Binding
 // ==========================================================================
 function schedulePlaybackRefresh() {
   if (!engine.isPlaying) return;
@@ -4765,6 +7150,12 @@ function schedulePlaybackRefresh() {
       engine.play(pos);
     }
   }, 180);
+}
+
+function setPill(id, active, onLabel = 'مفعّل', offLabel = 'مطفأ') {
+  const el = $(id);
+  el.classList.toggle('active', !!active);
+  el.textContent = active ? onLabel : offLabel;
 }
 
 function syncControlsFromState() {
@@ -4789,10 +7180,37 @@ function syncControlsFromState() {
   $('btnVocalMute').classList.toggle('active-mute', s.vocal.muted);
   $('btnVocalSolo').classList.toggle('active-solo', s.vocal.solo);
 
-  $('btnVocalFxToggle').classList.toggle('active', s.vocal.fxEnabled);
-  $('btnVocalFxToggle').textContent = s.vocal.fxEnabled ? 'FX مفعّل' : 'FX متوقف';
+  setPill('btnVocalFxToggle', s.vocal.fxEnabled, 'FX مفعّل', 'FX متوقف');
+  setPill('btnToggleEq', fx.eqEnabled !== false);
+  setPill('btnToggleComp', fx.compEnabled !== false);
+  setPill('btnToggleReverb', fx.reverbEnabled !== false, 'صدى مفعّل', 'صدى مطفأ');
+  setPill('btnToggleDelay', fx.delayEnabled !== false, 'ديلاي مفعّل', 'ديلاي مطفأ');
 
-  // Vocal FX
+  // Creative FX Pills & Sliders
+  setPill('btnToggleHarmony', fx.harmonyEnabled);
+  $('fxHarmonyInterval').value = String(fx.harmonyInterval);
+  $('fxHarmonyMix').value = fx.harmonyMix;
+  $('valFxHarmonyMix').textContent = `${fx.harmonyMix}%`;
+
+  setPill('btnToggleMod', fx.modEnabled);
+  $('fxModType').value = fx.modType;
+  $('fxModRate').value = fx.modRate;
+  $('valFxModRate').textContent = `${Number(fx.modRate).toFixed(1)} Hz`;
+  $('fxModDepth').value = fx.modDepth;
+  $('valFxModDepth').textContent = `${fx.modDepth}%`;
+  $('fxModMix').value = fx.modMix;
+  $('valFxModMix').textContent = `${fx.modMix}%`;
+
+  setPill('btnToggleLofi', fx.lofiEnabled);
+  $('fxLofiStyle').value = fx.lofiStyle;
+  $('fxLofiMix').value = fx.lofiMix;
+  $('valFxLofiMix').textContent = `${fx.lofiMix}%`;
+
+  setPill('btnToggleDrive', fx.driveEnabled);
+  $('fxDriveAmount').value = fx.driveAmount;
+  $('valFxDriveAmount').textContent = `${fx.driveAmount}%`;
+
+  // Vocal EQ & Dynamics
   $('fxHpf').value = fx.hpfFreq;
   $('valFxHpf').textContent = `${fx.hpfFreq} Hz`;
   $('fxGate').value = fx.gateThreshold;
@@ -4842,8 +7260,7 @@ function syncControlsFromState() {
   $('valFxDelayTone').textContent = `${(fx.delayToneHz / 1000).toFixed(1)} kHz`;
 
   // Master
-  $('btnMasterToggle').classList.toggle('active', m.enabled);
-  $('btnMasterToggle').textContent = m.enabled ? 'الماستر مفعّل' : 'الماستر متوقف';
+  setPill('btnMasterToggle', m.enabled, 'الماستر مفعّل', 'الماستر متوقف');
   $('msEqLow').value = m.eqLow;
   $('valMsEqLow').textContent = formatDb(m.eqLow);
   $('msEqMid').value = m.eqMid;
@@ -4903,7 +7320,74 @@ $('btnVocalFxToggle').addEventListener('click', () => {
   drawEqCurve($('eqCurveCanvas'), engine);
 });
 
-// Vocal FX Sliders
+// Per-Module FX Toggles
+$('btnToggleEq').addEventListener('click', () => {
+  engine.state.vocalFx.eqEnabled = !(engine.state.vocalFx.eqEnabled !== false);
+  syncControlsFromState();
+  engine.syncLiveParams({ eqToggleChanged: true });
+  drawEqCurve($('eqCurveCanvas'), engine);
+});
+$('btnToggleComp').addEventListener('click', () => {
+  engine.state.vocalFx.compEnabled = !(engine.state.vocalFx.compEnabled !== false);
+  syncControlsFromState();
+  engine.syncLiveParams();
+});
+$('btnToggleReverb').addEventListener('click', () => {
+  engine.state.vocalFx.reverbEnabled = !(engine.state.vocalFx.reverbEnabled !== false);
+  syncControlsFromState();
+  engine.syncLiveParams();
+});
+$('btnToggleDelay').addEventListener('click', () => {
+  engine.state.vocalFx.delayEnabled = !(engine.state.vocalFx.delayEnabled !== false);
+  syncControlsFromState();
+  engine.syncLiveParams();
+});
+
+// Creative FX Controls
+$('btnToggleHarmony').addEventListener('click', () => {
+  engine.state.vocalFx.harmonyEnabled = !engine.state.vocalFx.harmonyEnabled;
+  syncControlsFromState();
+  schedulePlaybackRefresh();
+});
+$('fxHarmonyInterval').addEventListener('change', (e) => {
+  engine.state.vocalFx.harmonyInterval = parseInt(e.target.value, 10);
+  engine._harmonyCache = { key: '', buffer: null };
+  schedulePlaybackRefresh();
+});
+bindSlider('fxHarmonyMix', (v) => { engine.state.vocalFx.harmonyMix = v; engine.syncLiveParams(); });
+
+$('btnToggleMod').addEventListener('click', () => {
+  engine.state.vocalFx.modEnabled = !engine.state.vocalFx.modEnabled;
+  syncControlsFromState();
+  engine.syncLiveParams();
+});
+$('fxModType').addEventListener('change', (e) => {
+  engine.state.vocalFx.modType = e.target.value;
+  engine.syncLiveParams();
+});
+bindSlider('fxModRate', (v) => { engine.state.vocalFx.modRate = v; engine.syncLiveParams(); });
+bindSlider('fxModDepth', (v) => { engine.state.vocalFx.modDepth = v; engine.syncLiveParams(); });
+bindSlider('fxModMix', (v) => { engine.state.vocalFx.modMix = v; engine.syncLiveParams(); });
+
+$('btnToggleLofi').addEventListener('click', () => {
+  engine.state.vocalFx.lofiEnabled = !engine.state.vocalFx.lofiEnabled;
+  syncControlsFromState();
+  engine.syncLiveParams();
+});
+$('fxLofiStyle').addEventListener('change', (e) => {
+  engine.state.vocalFx.lofiStyle = e.target.value;
+  engine.syncLiveParams();
+});
+bindSlider('fxLofiMix', (v) => { engine.state.vocalFx.lofiMix = v; engine.syncLiveParams(); });
+
+$('btnToggleDrive').addEventListener('click', () => {
+  engine.state.vocalFx.driveEnabled = !engine.state.vocalFx.driveEnabled;
+  syncControlsFromState();
+  engine.syncLiveParams({ driveChanged: true });
+});
+bindSlider('fxDriveAmount', (v) => { engine.state.vocalFx.driveAmount = v; engine.syncLiveParams({ driveChanged: true }); });
+
+// Vocal EQ & Dynamics Sliders
 const onEqChange = () => {
   engine.syncLiveParams();
   drawEqCurve($('eqCurveCanvas'), engine);
@@ -5038,6 +7522,9 @@ window.addEventListener('keydown', (e) => {
   } else if (e.key === 'r' || e.key === 'R') {
     e.preventDefault();
     $('btnRecord').click();
+  } else if (e.key === 't' || e.key === 'T') {
+    e.preventDefault();
+    $('btnMetronomeToggle').click();
   } else if (e.code === 'Home') {
     e.preventDefault();
     $('btnRewind').click();
@@ -5047,13 +7534,12 @@ window.addEventListener('keydown', (e) => {
 });
 
 // ==========================================================================
-// Real-Time Animation Loop (Waveforms, Playhead, VU Meters, FFT, GR)
+// Real-Time Animation Loop
 // ==========================================================================
 function animationLoop() {
   const curTime = engine.getCurrentTime();
   const totalDur = engine.getDuration();
 
-  // Auto-stop when playback finishes
   if (engine.isPlaying && totalDur > 0 && curTime >= totalDur + 0.05) {
     engine.stop(true);
     updateTransportUI();
@@ -5062,7 +7548,6 @@ function animationLoop() {
   $('timeCurrent').textContent = formatTime(curTime);
   $('timeTotal').textContent = formatTime(totalDur);
 
-  // Draw Track 1 (Backing Waveform)
   drawWaveformTrack($('backingWaveCanvas'), {
     peaks: backingPeaks,
     bufferDuration: engine.backingBuffer ? engine.backingBuffer.duration : 0,
@@ -5072,10 +7557,9 @@ function animationLoop() {
     color: '#e59a3c',
     bgTint: 'rgba(229, 154, 60, 0.07)',
     muted: engine.state.backing.muted,
-    emptyLabel: 'ارفع ملف موسيقى (MP3/WAV) أو اختر إيقاعاً جاهزاً من القائمة',
+    emptyLabel: 'ارفع موسيقى أو ألّف كوردات وآلات تلقائياً بعد الغناء بدون موسيقى',
   });
 
-  // Draw Track 2 (Vocal Waveform or Live Recording Waveform)
   drawWaveformTrack($('vocalWaveCanvas'), {
     peaks: vocalPeaks,
     bufferDuration: engine.activeVocalBuffer ? engine.activeVocalBuffer.duration : 0,
@@ -5088,17 +7572,14 @@ function animationLoop() {
     isRecording: engine.isRecording,
     recordPeaks: engine.recordPeakHistory,
     recordStartSec: engine.playStartOffsetSec,
-    emptyLabel: 'اضغط «تسجيل غناء» للبدء، أو استورد تسجيل غناء جاهز',
+    emptyLabel: 'اضغط «تسجيل غناء» أو «غناء بدون موسيقى (أكابيلا)» للبدء',
   });
 
-  // Meters
   const meters = engine.getMeterData();
 
-  // Mic Live Input Bar
   const micPct = Math.min(100, Math.max(0, ((gainToDb(meters.mic.peak) + 54) / 54) * 100));
   $('micMeterFill').style.width = `${engine.micStream ? micPct : 0}%`;
 
-  // Stereo VU Meters
   topVu.update(meters.masterL.peak, meters.masterR.peak);
   topVu.draw($('topVuCanvas'));
 
@@ -5112,7 +7593,6 @@ function animationLoop() {
     $('masterGrVal').textContent = `-${meters.masterGlueGR.toFixed(1)} dB`;
   }
 
-  // Vocal Compressor Gain Reduction Meter
   const gr = meters.vocalCompGR;
   $('vocalGrBar').style.width = `${Math.min(100, (gr / 18) * 100)}%`;
   $('vocalGrVal').textContent = `-${gr.toFixed(1)} dB`;
@@ -5125,6 +7605,7 @@ function animationLoop() {
 // ==========================================================================
 initDemoBeatsAndPresets();
 syncControlsFromState();
+updateMetronomeUI();
 drawEqCurve($('eqCurveCanvas'), engine);
 window.addEventListener('resize', () => {
   if ($('panel-vocal-fx').classList.contains('active')) {

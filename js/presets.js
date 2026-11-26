@@ -1,8 +1,14 @@
 /**
- * Nagham Studio — Vocal FX Presets, Mastering Presets, and Default DSP Parameters
+ * Nagham Studio — Vocal FX Presets, Mastering Presets, Metronome & Default DSP Parameters
  */
 
 export const DEFAULT_MIX_STATE = {
+  metronome: {
+    enabled: false,       // Live metronome ON / MUTE toggle
+    bpm: 100,             // 50 - 180 BPM
+    beatsPerBar: 4,       // 4 (4/4), 3 (3/4), 6 (6/8)
+    volume: 0.65,         // 0.0 - 1.0
+  },
   backing: {
     volume: -2.0,     // dB (-60 to +6)
     pan: 0,           // -1 to 1
@@ -20,6 +26,12 @@ export const DEFAULT_MIX_STATE = {
     duckingDb: 2.0,   // Auto-ducking of backing track during singing (0 to 6 dB)
   },
   vocalFx: {
+    // Per-module switches
+    eqEnabled: true,
+    compEnabled: true,
+    reverbEnabled: true,
+    delayEnabled: true,
+
     // High-Pass & Noise Gate
     hpfFreq: 85,          // Hz (20 - 300)
     gateThreshold: -52,   // dB (-80 = off, -60 to -20)
@@ -55,6 +67,27 @@ export const DEFAULT_MIX_STATE = {
     delayTimeMs: 320,     // ms (60 to 800)
     delayFeedback: 28,    // 0 - 75%
     delayToneHz: 3200,    // Low-pass filter on echoes (800 - 10000 Hz)
+
+    // Creative FX: Vocal Harmony / Pitch Shift Layer
+    harmonyEnabled: false,
+    harmonyInterval: 7,   // Semitones: -12, -5, +3, +4, +7, +12
+    harmonyMix: 28,       // 0 - 100%
+
+    // Creative FX: Flanger / Phaser Modulation
+    modEnabled: false,
+    modType: 'flanger',   // 'flanger' | 'phaser'
+    modRate: 0.6,         // Hz (0.1 - 5.0)
+    modDepth: 45,         // 0 - 100%
+    modMix: 30,           // 0 - 100%
+
+    // Creative FX: Telephone / Radio / Megaphone Lo-Fi Filter
+    lofiEnabled: false,
+    lofiStyle: 'radio',   // 'telephone' | 'radio' | 'megaphone'
+    lofiMix: 75,          // 0 - 100%
+
+    // Creative FX: Vocal Drive / Overdrive Grit
+    driveEnabled: false,
+    driveAmount: 25,      // 0 - 100%
   },
   master: {
     enabled: true,
@@ -69,6 +102,26 @@ export const DEFAULT_MIX_STATE = {
   },
 };
 
+const CREATIVE_OFF = {
+  eqEnabled: true,
+  compEnabled: true,
+  reverbEnabled: true,
+  delayEnabled: true,
+  harmonyEnabled: false,
+  harmonyInterval: 7,
+  harmonyMix: 25,
+  modEnabled: false,
+  modType: 'flanger',
+  modRate: 0.6,
+  modDepth: 40,
+  modMix: 25,
+  lofiEnabled: false,
+  lofiStyle: 'radio',
+  lofiMix: 75,
+  driveEnabled: false,
+  driveAmount: 20,
+};
+
 export const VOCAL_PRESETS = [
   {
     id: 'clean_studio',
@@ -76,6 +129,7 @@ export const VOCAL_PRESETS = [
     subtitle: 'Clean Studio',
     description: 'وضوح احترافي، توازن دقيق، ولمسة صدى طبيعية',
     fx: {
+      ...CREATIVE_OFF,
       hpfFreq: 85,
       gateThreshold: -52,
       eqLow: -1.5,
@@ -106,6 +160,7 @@ export const VOCAL_PRESETS = [
     subtitle: 'Oriental Tarab',
     description: 'دفء عميق مع صدى قاعة فخم وديلاي ناعم للعُرَب',
     fx: {
+      ...CREATIVE_OFF,
       hpfFreq: 75,
       gateThreshold: -55,
       eqLow: 0.5,
@@ -134,8 +189,9 @@ export const VOCAL_PRESETS = [
     id: 'rap_punch',
     name: 'راب وهيب هوب',
     subtitle: 'Punchy Rap',
-    description: 'حضور قوي ومباشر مع ضغط حاد وصدى قصير جداً',
+    description: 'حضور قوي ومباشر مع ضغط حاد ولمسة أوفر درايف خفيفة',
     fx: {
+      ...CREATIVE_OFF,
       hpfFreq: 105,
       gateThreshold: -46,
       eqLow: -2.5,
@@ -158,6 +214,8 @@ export const VOCAL_PRESETS = [
       delayTimeMs: 250,
       delayFeedback: 22,
       delayToneHz: 2600,
+      driveEnabled: true,
+      driveAmount: 18,
     },
   },
   {
@@ -166,6 +224,7 @@ export const VOCAL_PRESETS = [
     subtitle: 'Modern Pop',
     description: 'لمعان عالي في الترددات العليا وتوسيع ستيريو جذاب',
     fx: {
+      ...CREATIVE_OFF,
       hpfFreq: 95,
       gateThreshold: -50,
       eqLow: -2.0,
@@ -191,11 +250,89 @@ export const VOCAL_PRESETS = [
     },
   },
   {
+    id: 'harmony_choir',
+    name: 'هارموني وكورال',
+    subtitle: 'Harmony Choir',
+    description: 'صوت غناء ممتلئ مع طبقة هارموني متناغمة وصدى قاعة واسع',
+    fx: {
+      ...CREATIVE_OFF,
+      hpfFreq: 85,
+      gateThreshold: -52,
+      eqLow: -1.0,
+      eqWarmth: 1.2,
+      eqPresence: 2.8,
+      eqAir: 3.8,
+      deEsser: 35,
+      warmth: 24,
+      compThreshold: -21,
+      compRatio: 4.2,
+      compAttack: 10,
+      compRelease: 170,
+      compMakeup: 3.5,
+      doublerMix: 28,
+      reverbType: 'hall',
+      reverbMix: 30,
+      reverbDecay: 2.5,
+      reverbPreDelay: 30,
+      delayMix: 12,
+      delayTimeMs: 340,
+      delayFeedback: 26,
+      delayToneHz: 3400,
+      harmonyEnabled: true,
+      harmonyInterval: 7,
+      harmonyMix: 34,
+      modEnabled: true,
+      modType: 'phaser',
+      modRate: 0.35,
+      modDepth: 28,
+      modMix: 16,
+    },
+  },
+  {
+    id: 'vintage_lofi',
+    name: 'راديو / لو-فاي',
+    subtitle: 'Vintage Radio',
+    description: 'تأثير راديو وتليفون كلاسيكي دافئ مع صدى خفيف',
+    fx: {
+      ...CREATIVE_OFF,
+      hpfFreq: 160,
+      gateThreshold: -50,
+      eqLow: -4.0,
+      eqWarmth: 2.0,
+      eqPresence: 3.0,
+      eqAir: -3.5,
+      deEsser: 20,
+      warmth: 45,
+      compThreshold: -24,
+      compRatio: 5.5,
+      compAttack: 5,
+      compRelease: 110,
+      compMakeup: 4.5,
+      doublerMix: 6,
+      reverbType: 'room',
+      reverbMix: 16,
+      reverbDecay: 1.0,
+      reverbPreDelay: 12,
+      delayMix: 18,
+      delayTimeMs: 280,
+      delayFeedback: 30,
+      delayToneHz: 1800,
+      lofiEnabled: true,
+      lofiStyle: 'radio',
+      lofiMix: 85,
+      driveEnabled: true,
+      driveAmount: 24,
+    },
+  },
+  {
     id: 'broadcast_radio',
     name: 'إذاعي / بودكاست',
     subtitle: 'Warm Broadcast',
     description: 'صوت قريب ودافئ ومضغوط بوضوح فائق بدون صدى',
     fx: {
+      ...CREATIVE_OFF,
+      reverbEnabled: false,
+      delayEnabled: false,
       hpfFreq: 70,
       gateThreshold: -44,
       eqLow: 2.5,
@@ -226,6 +363,11 @@ export const VOCAL_PRESETS = [
     subtitle: 'Flat / Raw',
     description: 'الصوت الأصلي المسجل بدون أي تعديل أو مؤثرات',
     fx: {
+      ...CREATIVE_OFF,
+      eqEnabled: false,
+      compEnabled: false,
+      reverbEnabled: false,
+      delayEnabled: false,
       hpfFreq: 20,
       gateThreshold: -80,
       eqLow: 0,
