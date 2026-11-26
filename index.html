@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>استوديو النغم | تسجيل الغناء، فلاتر الصوت، الميكس والماستر وتصدير MP3</title>
+  <meta name="description" content="استوديو موسيقي متكامل في المتصفح لإضافة الموسيقى وتسجيل صوت الغناء عليها مع فلاتر صوت احترافية وميكس وماستر واستخراج مباشر بصيغة MP3." />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <!-- Count-In Overlay -->
+  <div id="countInOverlay" class="countin-overlay hidden" aria-live="assertive">
+    <div class="countin-box">
+      <div class="countin-label">استعد للغناء...</div>
+      <div id="countInNumber" class="countin-number">3</div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+  <!-- Hidden File Inputs -->
+  <input id="backingFileInput" type="file" accept="audio/*" hidden />
+  <input id="vocalFileInput" type="file" accept="audio/*" hidden />
+
+  <div class="studio-shell">
+    <!-- Top Transport & Header Bar -->
+    <header class="transport-bar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+            <line x1="12" y1="19" x2="12" y2="22" />
+          </svg>
+        </div>
+        <div>
+          <h1 class="brand-title">استوديو النغم</h1>
+          <p class="brand-sub">تسجيل غناء • فلاتر صوت • ميكس وماستر • MP3</p>
+        </div>
+      </div>
+
+      <div class="transport-controls" role="group" aria-label="أدوات التشغيل والتسجيل">
+        <button id="btnRewind" class="icon-btn" title="العودة للبداية (Home)" aria-label="العودة للبداية">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg>
+        </button>
+
+        <button id="btnPlayPause" class="transport-btn play-btn" title="تشغيل / إيقاف مؤقت (Space)">
+          <svg id="iconPlay" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          <svg id="iconPause" class="hidden" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>
+          <span id="playBtnLabel">تشغيل</span>
+        </button>
+
+        <button id="btnStop" class="icon-btn" title="إيقاف (Esc)" aria-label="إيقاف">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>
+        </button>
+
+        <button id="btnRecord" class="transport-btn record-btn" title="تسجيل غناء فوق الموسيقى (R)">
+          <span class="rec-dot"></span>
+          <span id="recBtnLabel">تسجيل غناء</span>
+        </button>
+
+        <label class="toggle-chip" title="تشغيل عد تنازلي 3-2-1 قبل التسجيل">
+          <input id="chkCountIn" type="checkbox" checked />
+          <span>عد تنازلي 3-2-1</span>
+        </label>
+      </div>
+
+      <div class="transport-readout">
+        <div class="timecode-box">
+          <span id="timeCurrent" class="mono">00:00.0</span>
+          <span class="time-sep">/</span>
+          <span id="timeTotal" class="mono muted">00:00.0</span>
+        </div>
+        <div class="mini-vu-wrap" title="مقياس مستوى الصوت الرئيسي L/R">
+          <span class="vu-label mono">MASTER</span>
+          <canvas id="topVuCanvas" class="mini-vu-canvas"></canvas>
+        </div>
+        <button id="btnQuickExport" class="primary-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          <span>تصدير MP3</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Multi-Track Timeline Section -->
+    <section class="timeline-section" aria-label="مسارات الصوت والتسجيل">
+      <!-- Track 1: Backing Music -->
+      <div id="backingTrackCard" class="track-row" data-dropzone="backing">
+        <div class="track-controls">
+          <div class="track-header">
+            <span class="track-badge backing">تراك 1</span>
+            <h2 class="track-name">الموسيقى الخلفية (البيت)</h2>
+          </div>
+          <div id="backingFileName" class="track-filename">لم يتم إضافة موسيقى بعد</div>
+
+          <div class="track-actions">
+            <button id="btnUploadBacking" class="small-btn accent-outline">رفع ملف صوتي</button>
+            <div class="demo-select-wrap">
+              <select id="selectDemoBeat" class="studio-select" aria-label="اختيار إيقاع تجريبي">
+                <option value="">أو جرّب إيقاعاً جاهزاً...</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="track-mixer-row">
+            <button id="btnBackingMute" class="ms-btn" title="كتم الموسيقى">M</button>
+            <button id="btnBackingSolo" class="ms-btn" title="تشغيل الموسيقى منفردة">S</button>
+            <div class="inline-slider">
+              <label for="rngBackingVol">الصوت</label>
+              <input id="rngBackingVol" type="range" min="-60" max="6" step="0.5" value="-2" />
+              <span id="valBackingVol" class="mono val-tag">-2.0 dB</span>
+            </div>
+          </div>
+
+          <div class="track-mixer-row compact">
+            <div class="inline-slider">
+              <label for="rngBackingPan">توزيع L/R</label>
+              <input id="rngBackingPan" type="range" min="-1" max="1" step="0.05" value="0" />
+              <span id="valBackingPan" class="mono val-tag">وسط</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="track-wave-col">
+          <canvas id="backingWaveCanvas" class="wave-canvas"></canvas>
+          <div class="wave-hint">اسحب وأفلت ملف MP3/WAV هنا أو انقر على الموجة للتنقل الزمني</div>
+        </div>
+      </div>
+
+      <!-- Track 2: Vocals -->
+      <div id="vocalTrackCard" class="track-row" data-dropzone="vocal">
+        <div class="track-controls">
+          <div class="track-header">
+            <span class="track-badge vocal">تراك 2</span>
+            <h2 class="track-name">صوت الغناء (Vocals)</h2>
+            <button id="btnVocalFxToggle" class="fx-pill active" title="تفعيل أو إيقاف فلاتر الصوت">FX مفعّل</button>
+          </div>
+
+          <div class="mic-bar">
+            <button id="btnTestMic" class="small-btn">تفعيل الميكروفون</button>
+            <div class="mic-meter-track" title="مستوى صوت الميكروفون">
+              <div id="micMeterFill" class="mic-meter-fill"></div>
+            </div>
+            <label class="mini-check" title="سماع صوتك مباشرة (يُنصح بسماعة الرأس)">
+              <input id="chkMonitor" type="checkbox" />
+              <span>مراقبة حية</span>
+            </label>
+          </div>
+
+          <div class="track-actions">
+            <button id="btnUploadVocal" class="small-btn">استيراد صوت غناء</button>
+            <select id="selectVocalTake" class="studio-select" aria-label="اختيار محاولة التسجيل">
+              <option value="-1">لا توجد تسجيلات بعد</option>
+            </select>
+            <button id="btnDeleteTake" class="small-btn danger-ghost" title="حذف التسجيل الحالي" disabled>حذف</button>
+          </div>
+
+          <div class="track-mixer-row">
+            <button id="btnVocalMute" class="ms-btn" title="كتم الغناء">M</button>
+            <button id="btnVocalSolo" class="ms-btn" title="تشغيل الغناء منفرداً">S</button>
+            <div class="inline-slider">
+              <label for="rngVocalVol">الصوت</label>
+              <input id="rngVocalVol" type="range" min="-60" max="6" step="0.5" value="1.5" />
+              <span id="valVocalVol" class="mono val-tag">+1.5 dB</span>
+            </div>
+          </div>
+
+          <div class="track-mixer-row compact two-col">
+            <div class="inline-slider" title="تعديل توقيت صوت الغناء بالملي ثانية لتعويض تأخير الميكروفون">
+              <label for="rngVocalSync">التزامن</label>
+              <input id="rngVocalSync" type="range" min="-250" max="250" step="5" value="0" />
+              <span id="valVocalSync" class="mono val-tag">0 ms</span>
+            </div>
+            <div class="inline-slider" title="تخفيض تلقائي ذكي للموسيقى أثناء الغناء لإبراز صوتك">
+              <label for="rngAutoDuck">إبراز الغناء</label>
+              <input id="rngAutoDuck" type="range" min="0" max="6" step="0.5" value="2" />
+              <span id="valAutoDuck" class="mono val-tag">2.0 dB</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="track-wave-col">
+          <canvas id="vocalWaveCanvas" class="wave-canvas"></canvas>
+          <div class="wave-hint">اضغط «تسجيل غناء» للغناء فوق الموسيقى أو اسحب ملف صوتك هنا</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Studio Workbench Tabs -->
+    <section class="workbench-section">
+      <nav class="studio-tabs" role="tablist" aria-label="أقسام المعالجة الصوتية">
+        <button id="tabBtnVocalFx" class="tab-btn active" role="tab" aria-selected="true" data-tab="vocal-fx">
+          فلاتر وتعديل صوت الغناء (Vocal FX)
+        </button>
+        <button id="tabBtnMastering" class="tab-btn" role="tab" aria-selected="false" data-tab="mastering">
+          الميكس والماسترينج النهائي (Mastering)
+        </button>
+        <button id="tabBtnExport" class="tab-btn" role="tab" aria-selected="false" data-tab="export">
+          الاستخراج والتحميل (Export MP3)
+        </button>
+      </nav>
+
+      <!-- TAB 1: VOCAL FX RACK -->
+      <div id="panel-vocal-fx" class="tab-panel active" role="tabpanel">
+        <!-- Vocal Presets Strip -->
+        <div class="presets-bar">
+          <span class="presets-label">قوالب صوت جاهزة:</span>
+          <div id="vocalPresetsGrid" class="presets-chips"></div>
+        </div>
+
+        <div class="fx-rack-grid">
+          <!-- Module 1: EQ & Tone Curve -->
+          <article class="rack-module span-2">
+            <header class="module-head">
+              <div>
+                <h3>معادل الترددات والعزل (EQ &amp; Cleanup)</h3>
+                <p>ضبط وضوح الصوت، الدفء، والهواء وإزالة الضوضاء المنخفضة وحدة حرف السين</p>
+              </div>
+              <span class="module-tag mono">4-BAND EQ + HPF</span>
+            </header>
+
+            <canvas id="eqCurveCanvas" class="eq-canvas"></canvas>
+
+            <div class="controls-grid cols-4">
+              <div class="control-item">
+                <div class="control-top"><label for="fxHpf">قطع التردد المنخفض (HPF)</label><span id="valFxHpf" class="mono">85 Hz</span></div>
+                <input id="fxHpf" type="range" min="20" max="300" step="5" value="85" />
+              </div>
+              <div class="control-item">
+                <div class="control-top"><label for="fxGate">عزل الضوضاء (Noise Gate)</label><span id="valFxGate" class="mono">-52 dB</span></div>
+                <input id="fxGate" type="range" min="-80" max="-20" step="1" value="-52" />
+              </div>
+              <div class="control-item">
+                <div class="control-top"><label for="fxDeEsser">تخفيف حرف السين (De-Esser)</label><span id="valFxDeEsser" class="mono">25%</span></div>
+                <input id="fxDeEsser" type="range" min="0" max="100" step="1" value="25" />
+              </div>
+              <div class="control-item">
+                <div class="control-top"><label for="fxWarmth">دفء أنبوبي (Tube Warmth)</label><span id="valFxWarmth" class="mono">18%</span></div>
+                <input id="fxWarmth" type="range" min="0" max="100" step="1" value="18" />
+              </div>
+
+              <div class="control-item">
+                <div class="control-top"><label for="fxEqLow">عمق / باس (100 Hz)</label><span id="valFxEqLow" class="mono">-1.5 dB</span></div>
+                <input id="fxEqLow" type="range" min="-12" max="12" step="0.5" value="-1.5" />
+              </div>
+              <div class="control-item">
+                <div class="control-top"><label for="fxEqWarmth">دفء الصوت (380 Hz)</label><span id="valFxEqWarmth" class="mono">+1.0 dB</span></div>
+                <input id="fxEqWarmth" type="range" min="-12" max="12" step="0.5" value="1.0" />
+              </div>
+              <div class="control-item">
+                <div class="control-top"><label for="fxEqPresence">حضور ووضوح (3.2 kHz)</label><span id="valFxEqPresence" class="mono">+2.5 dB</span></div>
+                <input id="fxEqPresence" type="range" min="-12" max="12" step="0.5" value="2.5" />
+              </div>
+              <div class="control-item">
+                <div class="control-top"><label for="fxEqAir">لمعان وهواء (10 kHz)</label><span id="valFxEqAir" class="mono">+3.0 dB</span></div>
+                <input id="fxEqAir" type="range" min="-12" max="12" step="0.5" value="3.0" />
+              </div>
+            </div>
+          </article>
+
+          <!-- Module 2: Vocal Compressor -->
+          <article class="rack-module">
+            <header class="module-head">
+              <div>
+                <h3>ضاغط الصوت (Compressor)</h3>
+                <p>توحيد مستوى الغناء ومنع التفاوت الحاد بين الهمس والصوت العالي</p>
+              </div>
+              <div class="gr-meter-wrap" title="مقدار الضغط الفعلي (Gain Reduction)">
+                <span class="mono gr-label">GR</span>
+                <div class="gr-bar-bg"><div id="vocalGrBar" class="gr-bar-fill"></div></div>
+                <span id="vocalGrVal" class="mono gr-num">0.0 dB</span>
+              </div>
+            </header>
+
+            <div class="controls-grid cols-2">
+              <div class="control-item">
+                <div class="control-top"><label for="fxCompThresh">الحد (Threshold)</label><span id="valFxCompThresh" class="mono">-20 dB</span></div>
+                <input id="fxCompThresh" type="range" min="-45" max="0" step="1" value="-20" />
+              </div>
+              <div class="control-item">
+                <div class="control-top"><label for="fxCompRatio">نسبة الضغط (Ratio)</label><span id="valFxCompRatio" class="mono">4.0:1</span></div>
+                <input id="fxCompRatio" type="range" min="1" max="14" step="0.2" value="4" />
+              </div>
+              <div class="control-item">
+                <div class="control-top"><label for="fxCompAttack">سرعة الاستجابة (Attack)</label><span id="valFxCompAttack" class="mono">10 ms</span></div>
+                <input id="fxCompAttack" type="range" min="1" max="80" step="1" value="10" />
+              </div>
+              <div class="control-item">
+                <div class="control-top"><label for="fxCompRelease">زمن التحرير (Release)</label><span id="valFxCompRelease" class="mono">160 ms</span></div>
+                <input id="fxCompRelease" type="range" min="30" max="600" step="10" value="160" />
+              </div>
+              <div class="control-item span-2">
+                <div class="control-top"><label for="fxCompMakeup">تعويض الصوت (Makeup Gain)</label><span id="valFxCompMakeup" class="mono">+3.0 dB</span></div>
+                <input id="fxCompMakeup" type="range" min="0" max="15" step="0.5" value="3" />
+              </div>
+            </div>
+          </article>
+
+          <!-- Module 3: Space (Reverb, Delay, Stereo Doubler) -->
+          <article class="rack-module">
+            <header class="module-head">
+              <div>
+                <h3>الصدى والمكان والتوسيع (Reverb &amp; Delay)</h3>
+                <p>إضافة بُعد مكاني وصدى طربي وتوسيع ستيريو لصوت الغناء</p>
+              </div>
+              <span class="module-tag mono">CONVOLUTION FX</span>
+            </header>
+
+            <div class="reverb-type-row">
+              <label for="fxReverbType">نوع القاعة:</label>
+              <select id="fxReverbType" class="studio-select">
+                <option value="room">غرفة صغيرة (Room)</option>
+                <option value="studio" selected>استوديو دافئ (Studio)</option>
+                <option value="hall">قاعة حفلات (Concert Hall)</option>
+                <option value="cathedral">صدى واسع (Cathedral)</option>
+                <option value="plate">صفيحة كلاسيكية (Plate)</option>
+              </select>
+            </div>
+
+            <div class="controls-grid cols-2">
+              <div class="control-item">
+                <div class="control-top"><label for="fxReverbMix">نسبة الصدى (Reverb Mix)</label><span id="valFxReverbMix" class="mono">20%</span></div>
+                <input id="fxReverbMix" type="range" min="0" max="100" step="1" value="20" />
+              </div>
+              <div class="control-item">
+                <div class="control-top"><label for="fxReverbDecay">طول الصدى (Decay)</label><span id="valFxReverbDecay" class="mono">1.6 s</span></div>
+                <input id="fxReverbDecay" type="range" min="0.4" max="5.0" step="0.1" value="1.6" />
+              </div>
+              <div class="control-item">
+                <div class="control-top"><label for="fxReverbPre">تأخير مسبق (Pre-Delay)</label><span id="valFxReverbPre" class="mono">22 ms</span></div>
+                <input id="fxReverbPre" type="range" min="0" max="120" step="2" value="22" />
+              </div>
+              <div class="control-item">
+                <div class="control-top"><label for="fxDoubler">تضخيم ستيريو (Doubler)</label><span id="valFxDoubler" class="mono">14%</span></div>
+                <input id="fxDoubler" type="range" min="0" max="100" step="1" value="14" />
+              </div>
+              <div class="control-item">
+                <div class="control-top"><label for="fxDelayMix">تكرار الصدى (Delay Mix)</label><span id="valFxDelayMix" class="mono">10%</span></div>
+                <input id="fxDelayMix" type="range" min="0" max="100" step="1" value="10" />
+              </div>
+              <div class="control-item">
+                <div class="control-top"><label for="fxDelayTime">زمن التكرار (Delay Time)</label><span id="valFxDelayTime" class="mono">320 ms</span></div>
+                <input id="fxDelayTime" type="range" min="60" max="800" step="10" value="320" />
+              </div>
+              <div class="control-item">
+                <div class="control-top"><label for="fxDelayFb">عدد التكرارات (Feedback)</label><span id="valFxDelayFb" class="mono">28%</span></div>
+                <input id="fxDelayFb" type="range" min="0" max="75" step="1" value="28" />
+              </div>
+              <div class="control-item">
+                <div class="control-top"><label for="fxDelayTone">نعومة التكرار (Tone)</label><span id="valFxDelayTone" class="mono">3.2 kHz</span></div>
+                <input id="fxDelayTone" type="range" min="800" max="10000" step="100" value="3200" />
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+
+      <!-- TAB 2: MASTERING SUITE -->
+      <div id="panel-mastering" class="tab-panel" role="tabpanel">
+        <div class="presets-bar">
+          <span class="presets-label">قوالب الماسترينج:</span>
+          <div id="masterPresetsGrid" class="presets-chips"></div>
+          <button id="btnMasterToggle" class="fx-pill active" style="margin-inline-start: auto;">الماستر مفعّل</button>
+        </div>
+
+        <div class="fx-rack-grid">
+          <!-- Spectrum & Meters -->
+          <article class="rack-module span-2">
+            <header class="module-head">
+              <div>
+                <h3>محلل الطيف الترددي ومقياس الخرج (Master Analyzer)</h3>
+                <p>مراقبة توازن الترددات ومستوى الخرج الستيريو في الزمن الحقيقي</p>
+              </div>
+              <div class="master-readout-pills">
+                <span class="stat-pill">الذروة: <strong id="livePeakDb" class="mono">-∞ dB</strong></span>
+                <span class="stat-pill">ضغط الدمج: <strong id="masterGrVal" class="mono">0.0 dB</strong></span>
+              </div>
+            </header>
+            <canvas id="spectrumCanvas" class="spectrum-canvas"></canvas>
+            <div class="master-vu-row">
+              <span class="mono muted">L / R OUTPUT</span>
+              <canvas id="masterVuCanvas" class="master-vu-canvas"></canvas>
+            </div>
+          </article>
+
+          <!-- Master Tone & Stereo Width -->
+          <article class="rack-module">
+            <header class="module-head">
+              <div>
+                <h3>تلوين الماستر والمجال الستيريو</h3>
+                <p>تلميع الميكس الكلي وتوسيع الانتشار السمعي بتقنية Mid/Side</p>
+              </div>
+              <span class="module-tag mono">M/S MASTER EQ</span>
+            </header>
+            <div class="controls-grid cols-2">
+              <div class="control-item">
+                <div class="control-top"><label for="msEqLow">باس الماستر (80 Hz)</label><span id="valMsEqLow" class="mono">+0.8 dB</span></div>
+                <input id="msEqLow" type="range" min="-6" max="6" step="0.2" value="0.8" />
+              </div>
+              <div class="control-item">
+                <div class="control-top"><label for="msEqMid">وسط الماستر (1.2 kHz)</label><span id="valMsEqMid" class="mono">0.0 dB</span></div>
+                <input id="msEqMid" type="range" min="-6" max="6" step="0.2" value="0" />
+              </div>
+              <div class="control-item">
+                <div class="control-top"><label for="msEqHigh">وضوح الماستر (11 kHz)</label><span id="valMsEqHigh" class="mono">+1.0 dB</span></div>
+                <input id="msEqHigh" type="range" min="-6" max="6" step="0.2" value="1.0" />
+              </div>
+              <div class="control-item">
+                <div class="control-top"><label for="msWidth">اتساع الستيريو (Width)</label><span id="valMsWidth" class="mono">108%</span></div>
+                <input id="msWidth" type="range" min="0" max="150" step="2" value="108" />
+              </div>
+            </div>
+          </article>
+
+          <!-- Glue Compressor & Brickwall Limiter -->
+          <article class="rack-module">
+            <header class="module-head">
+              <div>
+                <h3>الدمج والليـميتر النهائي (Glue &amp; Maximizer)</h3>
+                <p>دمج الغناء مع الموسيقى ورفع الجهارة للمستوى التجاري بدون تشويه</p>
+              </div>
+              <span class="module-tag mono">LIMITER</span>
+            </header>
+            <div class="controls-grid cols-2">
+              <div class="control-item">
+                <div class="control-top"><label for="msGlue">دمج التراكات (Glue Comp)</label><span id="valMsGlue" class="mono">35%</span></div>
+                <input id="msGlue" type="range" min="0" max="100" step="1" value="35" />
+              </div>
+              <div class="control-item">
+                <div class="control-top"><label for="msDrive">رفع الجهارة (Maximizer)</label><span id="valMsDrive" class="mono">+2.5 dB</span></div>
+                <input id="msDrive" type="range" min="0" max="12" step="0.5" value="2.5" />
+              </div>
+              <div class="control-item">
+                <div class="control-top"><label for="msCeiling">سقف الذروة (Ceiling)</label><span id="valMsCeiling" class="mono">-0.3 dB</span></div>
+                <input id="msCeiling" type="range" min="-3" max="-0.1" step="0.1" value="-0.3" />
+              </div>
+              <div class="control-item">
+                <div class="control-top"><label for="msVol">مستوى الماستر النهائي</label><span id="valMsVol" class="mono">0.0 dB</span></div>
+                <input id="msVol" type="range" min="-24" max="6" step="0.5" value="0" />
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+
+      <!-- TAB 3: EXPORT MP3 / WAV -->
+      <div id="panel-export" class="tab-panel" role="tabpanel">
+        <div class="export-layout">
+          <article class="rack-module">
+            <header class="module-head">
+              <div>
+                <h3>إعدادات استخراج الأغنية النهائية</h3>
+                <p>يتم تصيير كل الفلاتر والميكس والماستر بدقة 44.1 kHz ستيريو ثم الترميز مباشرة داخل المتصفح</p>
+              </div>
+              <span class="module-tag mono">LAME MP3 ENGINE</span>
+            </header>
+
+            <div class="export-form">
+              <div class="form-field">
+                <label for="exportFileName">اسم الملف / الأغنية</label>
+                <input id="exportFileName" type="text" class="studio-input" value="اغنيتي-الجديدة" placeholder="أدخل اسم الأغنية..." />
+              </div>
+
+              <div class="form-row-2">
+                <div class="form-field">
+                  <label for="exportFormat">صيغة الملف</label>
+                  <select id="exportFormat" class="studio-select full">
+                    <option value="mp3" selected>MP3 (مضغوط عالي الجودة — متوافق مع كل الأجهزة)</option>
+                    <option value="wav">WAV (خام غير مضغوط 16-bit PCM)</option>
+                  </select>
+                </div>
+
+                <div class="form-field" id="bitrateField">
+                  <label for="exportBitrate">جودة الـ MP3 (Bitrate)</label>
+                  <select id="exportBitrate" class="studio-select full">
+                    <option value="128">128 kbps — حجم صغير للمشاركة السريعة</option>
+                    <option value="192" selected>192 kbps — جودة ممتازة ومتوازنة (موصى به)</option>
+                    <option value="320">320 kbps — أقصى جودة استوديو MP3</option>
+                  </select>
+                </div>
+              </div>
+
+              <label class="checkbox-row">
+                <input id="exportNormalize" type="checkbox" checked />
+                <span>توحيد أقصى مستوى صوت تلقائياً (Auto-Normalize إلى سقف الماستر بدون تشويه)</span>
+              </label>
+
+              <button id="btnStartExport" class="primary-btn large-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                <span>بدء الميكس والماستر واستخراج الملف الآن</span>
+              </button>
+
+              <!-- Progress Bar -->
+              <div id="exportProgressBox" class="progress-box hidden">
+                <div class="progress-top">
+                  <span id="exportProgressMsg">جاري التجهيز...</span>
+                  <span id="exportProgressPct" class="mono">0%</span>
+                </div>
+                <div class="progress-track">
+                  <div id="exportProgressFill" class="progress-fill"></div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- Export Result Preview -->
+          <article class="rack-module export-result-card">
+            <header class="module-head">
+              <div>
+                <h3>النسخة النهائية الجاهزة</h3>
+                <p>استمع للنتيجة بعد الميكس والماستر وحمّل الملف مباشرة على جهازك</p>
+              </div>
+              <span id="exportReadyBadge" class="module-tag mono">READY</span>
+            </header>
+
+            <div id="exportEmptyState" class="export-empty">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.45">
+                <circle cx="12" cy="12" r="10"/>
+                <polygon points="10 8 16 12 10 16 10 8"/>
+              </svg>
+              <p>أضف الموسيقى وسجّل صوتك، ثم اضغط على زر الاستخراج لتجهيز ملف MP3 النهائي ومعاينته هنا.</p>
+            </div>
+
+            <div id="exportResultState" class="export-result hidden">
+              <div class="result-stats">
+                <div class="result-stat">
+                  <span class="label">الصيغة والجودة</span>
+                  <strong id="resFormat" class="mono">MP3 192k</strong>
+                </div>
+                <div class="result-stat">
+                  <span class="label">الحجم</span>
+                  <strong id="resSize" class="mono">0 MB</strong>
+                </div>
+                <div class="result-stat">
+                  <span class="label">المدة</span>
+                  <strong id="resDuration" class="mono">00:00</strong>
+                </div>
+                <div class="result-stat">
+                  <span class="label">الجهارة / الذروة</span>
+                  <strong id="resLoudness" class="mono">-14 LUFS</strong>
+                </div>
+              </div>
+
+              <audio id="exportAudioPreview" controls class="export-audio-player"></audio>
+
+              <a id="btnDownloadFile" class="primary-btn large-btn download-link" download="song.mp3" href="#">
+                تحميل الملف إلى جهازك
+              </a>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <footer class="studio-footer">
+      <span>اختصارات لوحة المفاتيح: <kbd>Space</kbd> تشغيل/إيقاف • <kbd>R</kbd> تسجيل • <kbd>Home</kbd> البداية</span>
+      <span>نصيحة: استخدم سماعات الرأس أثناء التسجيل للحصول على أنقى صوت غناء بدون تداخل مع الموسيقى</span>
+    </footer>
+  </div>
+
+  <!-- Local LAME MP3 Encoder (Zero External CDN Required) -->
+  <script src="./vendor/lamejs.iife.js"></script>
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>

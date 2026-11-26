@@ -1,0 +1,15 @@
+{
+  "name": "vocal-studio",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "build:standalone": "node build-standalone.js"
+  },
+  "keywords": [],
+  "dependencies": {
+    "@breezystack/lamejs": "^1.2.7"
+  }
+}
