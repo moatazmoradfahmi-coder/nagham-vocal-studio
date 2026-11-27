@@ -33,6 +33,51 @@ export const RHYTHM_STYLES = [
   { id: 'acoustic', name: 'أكوستيك هادئ (Kick & Shaker)' },
 ];
 
+export const RHYTHM_STEP_PRESETS = {
+  none: {
+    kick:  [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+    snare: [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+    perc:  [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+    hat:   [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+  },
+  maqsum: {
+    kick:  [1,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0],
+    snare: [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+    perc:  [0,0,1,0, 0,0,1,0, 0,0,0,0, 1,0,0,0],
+    hat:   [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,1,0],
+  },
+  saidi: {
+    kick:  [1,0,0,0, 0,0,1,0, 1,0,0,0, 0,0,0,0],
+    snare: [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+    perc:  [0,0,1,0, 0,0,0,0, 0,0,0,0, 1,0,0,0],
+    hat:   [0,0,0,0, 1,0,0,0, 0,0,0,0, 0,0,1,0],
+  },
+  pop: {
+    kick:  [1,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0],
+    snare: [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0],
+    perc:  [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+    hat:   [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0],
+  },
+  lofi: {
+    kick:  [1,0,0,0, 0,0,0,1, 0,0,1,0, 0,0,0,0],
+    snare: [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0],
+    perc:  [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,1,0],
+    hat:   [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0],
+  },
+  trap: {
+    kick:  [1,0,0,0, 0,0,0,0, 0,0,1,0, 0,0,0,0],
+    snare: [0,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0],
+    perc:  [0,0,0,0, 0,0,1,0, 0,0,0,0, 0,0,1,0],
+    hat:   [1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1],
+  },
+  acoustic: {
+    kick:  [1,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0],
+    snare: [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+    perc:  [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0],
+    hat:   [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0],
+  },
+};
+
 export const PLAY_STYLES = [
   { id: 'ballad', name: 'هادئ ورومانسي (Ballad)' },
   { id: 'arpeggio', name: 'أربيجيو متدفق (Arpeggio)' },
@@ -249,6 +294,7 @@ export async function renderComposedArrangement({
   playStyle = 'ballad',
   rhythmStyle = 'maqsum',
   rhythmVolume = 0.72,
+  customStepPattern = null,
   instruments = {
     piano: { enabled: true, volume: 0.75 },
     guitar: { enabled: false, volume: 0.65 },
@@ -692,55 +738,29 @@ export async function renderComposedArrangement({
       }
     }
 
-    // --- RHYTHM / DRUMS ---
-    if (rhythmStyle !== 'none' && rhythmVolume > 0.01) {
+    // --- RHYTHM / DRUMS (FL 16-Step Sequencer or Preset Pattern) ---
+    const activePattern = customStepPattern || RHYTHM_STEP_PRESETS[rhythmStyle];
+    if (activePattern && rhythmVolume > 0.01) {
       const rv = rhythmVolume;
-      if (rhythmStyle === 'maqsum') {
-        // Classic Maqsum: Doum - Tek - - Tek - Doum - Tek -
-        playDoum(t0, 0.72 * rv);
-        playTek(t0 + eighth * 1, 0.28 * rv, 2250, 0.07);
-        playTek(t0 + eighth * 3, 0.26 * rv, 2400, 0.075);
-        if (totalEighths >= 6) playDoum(t0 + eighth * 4, 0.65 * rv);
-        if (totalEighths >= 7) playTek(t0 + eighth * 6, 0.30 * rv, 2100, 0.08);
-        if (totalEighths >= 8) playTek(t0 + eighth * 7, 0.16 * rv, 5400, 0.04);
-      } else if (rhythmStyle === 'saidi') {
-        // Saidi: Doum - Tek - - Doum - Doum - Tek -
-        playDoum(t0, 0.75 * rv);
-        playTek(t0 + eighth * 1, 0.26 * rv, 2200, 0.07);
-        playDoum(t0 + eighth * 3, 0.68 * rv);
-        if (totalEighths >= 6) playDoum(t0 + eighth * 4, 0.74 * rv);
-        if (totalEighths >= 7) playTek(t0 + eighth * 6, 0.30 * rv, 2300, 0.08);
-        if (totalEighths >= 8) playTek(t0 + eighth * 7, 0.14 * rv, 5600, 0.04);
-      } else if (rhythmStyle === 'pop') {
-        playKick(t0, 0.72 * rv);
-        if (totalEighths >= 6) playKick(t0 + eighth * 4, 0.66 * rv);
-        if (totalEighths >= 4) playSnare(t0 + eighth * 2, 0.36 * rv);
-        if (totalEighths >= 8) playSnare(t0 + eighth * 6, 0.36 * rv);
-        for (let s = 0; s < totalEighths; s++) {
-          playHat(t0 + s * eighth, (s % 2 === 0 ? 0.12 : 0.07) * rv);
+      const isOriental = rhythmStyle === 'maqsum' || rhythmStyle === 'saidi';
+      const isTrap = rhythmStyle === 'trap';
+      const step16 = barSec / 16;
+
+      for (let st = 0; st < 16; st++) {
+        const ts = t0 + st * step16;
+        if (activePattern.kick?.[st]) {
+          if (isOriental) playDoum(ts, 0.74 * rv);
+          else if (isTrap) playKick(ts, 0.80 * rv, 36, 0.42);
+          else playKick(ts, 0.72 * rv, 46, 0.26);
         }
-      } else if (rhythmStyle === 'lofi') {
-        playKick(t0, 0.68 * rv, 48, 0.25);
-        if (totalEighths >= 5) playKick(t0 + eighth * 3.5, 0.56 * rv, 48, 0.22);
-        if (totalEighths >= 4) playSnare(t0 + eighth * 2, 0.28 * rv);
-        if (totalEighths >= 8) playSnare(t0 + eighth * 6, 0.28 * rv);
-        for (let s = 0; s < totalEighths; s++) {
-          playHat(t0 + s * eighth + (s % 2 === 1 ? 0.015 : 0), 0.075 * rv);
+        if (activePattern.snare?.[st]) {
+          playSnare(ts, 0.36 * rv);
         }
-      } else if (rhythmStyle === 'trap') {
-        playKick(t0, 0.80 * rv, 36, 0.42);
-        if (totalEighths >= 6) playKick(t0 + eighth * 5, 0.70 * rv, 36, 0.35);
-        if (totalEighths >= 5) playSnare(t0 + eighth * 4, 0.40 * rv);
-        // Fast trap hi-hats (16ths)
-        for (let h = 0; h < totalEighths * 2; h++) {
-          const accent = h % 4 === 0 ? 0.11 : 0.06;
-          playHat(t0 + h * (eighth / 2), accent * rv);
+        if (activePattern.perc?.[st]) {
+          playTek(ts, 0.28 * rv, isOriental ? 2250 : 3200, 0.075);
         }
-      } else if (rhythmStyle === 'acoustic') {
-        playKick(t0, 0.55 * rv, 52, 0.22);
-        if (totalEighths >= 6) playKick(t0 + eighth * 4, 0.48 * rv, 52, 0.20);
-        for (let s = 0; s < totalEighths; s++) {
-          playTek(t0 + s * eighth, (s % 2 === 0 ? 0.11 : 0.06) * rv, 6200, 0.045);
+        if (activePattern.hat?.[st]) {
+          playHat(ts, (st % 4 === 0 ? 0.12 : 0.075) * rv);
         }
       }
     }

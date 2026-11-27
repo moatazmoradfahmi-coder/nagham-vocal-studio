@@ -13,6 +13,7 @@ import {
   SCALES,
   CHORD_QUALITIES,
   RHYTHM_STYLES,
+  RHYTHM_STEP_PRESETS,
   PLAY_STYLES,
   formatChordName,
   analyzeVocalAndComposeChords,
@@ -43,10 +44,11 @@ let restartDebounceTimer = null;
 let lastRecordingWasAcapella = false;
 let tapTimes = [];
 
-// Smart Auto-Composer State
+// Smart Auto-Composer & FL 16-Step Sequencer State
 let composedChords = buildDefaultProgression(2, 'hijaz', 8); // Default D Hijaz 8 bars
 let detectedScaleId = 'hijaz';
 let detectedRootPc = 2;
+let flStepPattern = structuredClone(RHYTHM_STEP_PRESETS.maqsum);
 
 const $ = (id) => document.getElementById(id);
 
@@ -89,13 +91,16 @@ function showToast(message, type = 'info') {
 }
 
 // ==========================================================================
-// Tab Switching
+// Tab Switching, FL Window Dock, Browser Toggle & FL Hint LCD
 // ==========================================================================
 function switchTab(tabName) {
   document.querySelectorAll('.tab-btn').forEach((btn) => {
     const active = btn.dataset.tab === tabName;
     btn.classList.toggle('active', active);
     btn.setAttribute('aria-selected', String(active));
+  });
+  document.querySelectorAll('[data-dock-tab]').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.dockTab === tabName);
   });
   document.querySelectorAll('.tab-panel').forEach((panel) => {
     panel.classList.toggle('active', panel.id === `panel-${tabName}`);
@@ -107,6 +112,34 @@ function switchTab(tabName) {
 
 document.querySelectorAll('.tab-btn').forEach((btn) => {
   btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+});
+
+document.querySelectorAll('[data-dock-tab]').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    switchTab(btn.dataset.dockTab);
+    document.querySelector('.workbench-section')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+});
+
+$('btnToggleBrowser').addEventListener('click', () => {
+  const ws = document.querySelector('.fl-workspace');
+  const collapsed = ws.classList.toggle('browser-collapsed');
+  $('btnToggleBrowser').classList.toggle('active', !collapsed);
+});
+
+// Classic FL Studio dynamic Hint LCD on hover
+const defaultHint = 'جاهز • اختر موسيقى أو اضغط «أكابيلا» للغناء بدون موسيقى وتأليف كوردات وإيقاع تلقائياً';
+document.addEventListener('pointerover', (e) => {
+  const target = e.target.closest?.('[data-hint], [title]');
+  const hint = target?.getAttribute('data-hint') || target?.getAttribute('title');
+  if (hint && $('flHintText')) {
+    $('flHintText').textContent = hint;
+  }
+});
+document.addEventListener('pointerout', (e) => {
+  if (!e.relatedTarget && $('flHintText')) {
+    $('flHintText').textContent = defaultHint;
+  }
 });
 
 $('btnQuickExport').addEventListener('click', () => {
@@ -210,14 +243,26 @@ $('rngMetroVol').addEventListener('input', (e) => {
 // ==========================================================================
 function initDemoBeatsAndPresets() {
   const demoSel = $('selectDemoBeat');
+  const browserBeats = $('flBrowserBeats');
   DEMO_BEATS.forEach((b) => {
     const opt = document.createElement('option');
     opt.value = b.id;
     opt.textContent = `${b.name} (${b.bpm} BPM)`;
     demoSel.appendChild(opt);
+
+    const bBtn = document.createElement('button');
+    bBtn.type = 'button';
+    bBtn.className = 'fl-tree-item';
+    bBtn.textContent = `${b.name} (${b.bpm} BPM)`;
+    bBtn.addEventListener('click', () => {
+      demoSel.value = b.id;
+      demoSel.dispatchEvent(new Event('change'));
+    });
+    browserBeats.appendChild(bBtn);
   });
 
   const vocalGrid = $('vocalPresetsGrid');
+  const browserPresets = $('flBrowserPresets');
   VOCAL_PRESETS.forEach((p) => {
     const btn = document.createElement('button');
     btn.className = `preset-chip ${p.id === activeVocalPresetId ? 'active' : ''}`;
@@ -226,9 +271,22 @@ function initDemoBeatsAndPresets() {
     btn.textContent = p.name;
     btn.addEventListener('click', () => applyVocalPreset(p));
     vocalGrid.appendChild(btn);
+
+    const tBtn = document.createElement('button');
+    tBtn.type = 'button';
+    tBtn.className = `fl-tree-item ${p.id === activeVocalPresetId ? 'active' : ''}`;
+    tBtn.dataset.browserPresetId = p.id;
+    tBtn.title = p.description;
+    tBtn.textContent = p.name;
+    tBtn.addEventListener('click', () => {
+      applyVocalPreset(p);
+      switchTab('vocal-fx');
+    });
+    browserPresets.appendChild(tBtn);
   });
 
   const masterGrid = $('masterPresetsGrid');
+  const browserMasters = $('flBrowserMasters');
   MASTER_PRESETS.forEach((p) => {
     const btn = document.createElement('button');
     btn.className = `preset-chip ${p.id === activeMasterPresetId ? 'active' : ''}`;
@@ -236,6 +294,29 @@ function initDemoBeatsAndPresets() {
     btn.textContent = p.name;
     btn.addEventListener('click', () => applyMasterPreset(p));
     masterGrid.appendChild(btn);
+
+    const mBtn = document.createElement('button');
+    mBtn.type = 'button';
+    mBtn.className = `fl-tree-item ${p.id === activeMasterPresetId ? 'active' : ''}`;
+    mBtn.dataset.browserMasterId = p.id;
+    mBtn.textContent = p.name;
+    mBtn.addEventListener('click', () => {
+      applyMasterPreset(p);
+      switchTab('mastering');
+    });
+    browserMasters.appendChild(mBtn);
+  });
+
+  // FL Browser Auto-Tune quick shortcuts
+  document.querySelectorAll('[data-browser-at]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const mode = btn.dataset.browserAt;
+      if (mode === 'natural') $('btnAtModeNatural').click();
+      else if (mode === 'pop') $('btnAtModePop').click();
+      else if (mode === 'hard') $('btnAtModeHard').click();
+      else toggleAutoTune(false);
+      switchTab('vocal-fx');
+    });
   });
 
   // Populate Auto-Composer & Auto-Tune Key selects
@@ -270,7 +351,68 @@ function initDemoBeatsAndPresets() {
     rhythmSel.appendChild(opt);
   });
 
+  rhythmSel.addEventListener('change', (e) => {
+    const preset = RHYTHM_STEP_PRESETS[e.target.value] || RHYTHM_STEP_PRESETS.none;
+    flStepPattern = structuredClone(preset);
+    renderStepSequencer();
+  });
+
+  $('btnResetSteps').addEventListener('click', () => {
+    const preset = RHYTHM_STEP_PRESETS[rhythmSel.value] || RHYTHM_STEP_PRESETS.maqsum;
+    flStepPattern = structuredClone(preset);
+    renderStepSequencer();
+  });
+
+  $('btnClearSteps').addEventListener('click', () => {
+    flStepPattern = structuredClone(RHYTHM_STEP_PRESETS.none);
+    renderStepSequencer();
+  });
+
+  renderStepSequencer();
   renderChordsGrid();
+}
+
+function renderStepSequencer() {
+  const grid = $('flStepSequencerGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+
+  const rows = [
+    { key: 'kick',  label: 'Doum / Kick',  cls: 'kick-ch' },
+    { key: 'snare', label: 'Snare / Clap', cls: 'snare-ch' },
+    { key: 'perc',  label: 'Tek / Perc',   cls: 'perc-ch' },
+    { key: 'hat',   label: 'Hi-Hat / Riq', cls: 'hat-ch' },
+  ];
+
+  rows.forEach((row) => {
+    const rowEl = document.createElement('div');
+    rowEl.className = 'fl-seq-row';
+
+    const ch = document.createElement('div');
+    ch.className = `fl-seq-channel ${row.cls}`;
+    ch.innerHTML = `<span>${row.label}</span>`;
+    rowEl.appendChild(ch);
+
+    const stepsWrap = document.createElement('div');
+    stepsWrap.className = 'fl-seq-steps';
+
+    for (let i = 0; i < 16; i++) {
+      const cell = document.createElement('button');
+      cell.type = 'button';
+      const isGroupB = Math.floor(i / 4) % 2 === 1;
+      const isActive = !!flStepPattern[row.key]?.[i];
+      cell.className = `fl-step-cell ${isGroupB ? 'group-b' : ''} ${isActive ? 'active' : ''}`;
+      cell.title = `${row.label} — خطوة ${i + 1}`;
+      cell.addEventListener('click', () => {
+        flStepPattern[row.key][i] = flStepPattern[row.key][i] ? 0 : 1;
+        cell.classList.toggle('active', !!flStepPattern[row.key][i]);
+      });
+      stepsWrap.appendChild(cell);
+    }
+
+    rowEl.appendChild(stepsWrap);
+    grid.appendChild(rowEl);
+  });
 }
 
 function applyVocalPreset(preset) {
@@ -289,6 +431,9 @@ function applyVocalPreset(preset) {
   document.querySelectorAll('#vocalPresetsGrid .preset-chip').forEach((b) => {
     b.classList.toggle('active', b.dataset.presetId === preset.id);
   });
+  document.querySelectorAll('[data-browser-preset-id]').forEach((b) => {
+    b.classList.toggle('active', b.dataset.browserPresetId === preset.id);
+  });
 
   syncControlsFromState();
   engine.syncLiveParams({ reverbIRChanged: true, warmthChanged: true, driveChanged: true, eqToggleChanged: true });
@@ -304,6 +449,9 @@ function applyMasterPreset(preset) {
 
   document.querySelectorAll('#masterPresetsGrid .preset-chip').forEach((b) => {
     b.classList.toggle('active', b.dataset.masterId === preset.id);
+  });
+  document.querySelectorAll('[data-browser-master-id]').forEach((b) => {
+    b.classList.toggle('active', b.dataset.browserMasterId === preset.id);
   });
 
   syncControlsFromState();
@@ -455,8 +603,9 @@ async function handleGenerateArrangement() {
   const playStyle = $('compPlayStyle').value;
 
   const anyInst = Object.values(instruments).some((i) => i.enabled && i.volume > 0.01);
-  if (!anyInst && rhythmStyle === 'none') {
-    showToast('اختر آلة موسيقية واحدة على الأقل أو اختر إيقاعاً قبل التوليد!', 'error');
+  const anyDrumStep = Object.values(flStepPattern).some((row) => row.some(Boolean));
+  if (!anyInst && !anyDrumStep) {
+    showToast('اختر آلة موسيقية واحدة على الأقل أو فعّل خطوات في سيكوينسر الإيقاع!', 'error');
     return;
   }
 
@@ -484,6 +633,7 @@ async function handleGenerateArrangement() {
       playStyle,
       rhythmStyle,
       rhythmVolume,
+      customStepPattern: flStepPattern,
       instruments,
     });
 
@@ -900,6 +1050,33 @@ function syncControlsFromState() {
   setPill('btnToggleComp', fx.compEnabled !== false);
   setPill('btnToggleReverb', fx.reverbEnabled !== false, 'صدى مفعّل', 'صدى مطفأ');
   setPill('btnToggleDelay', fx.delayEnabled !== false, 'ديلاي مفعّل', 'ديلاي مطفأ');
+
+  // Sync FL Vertical Mixer Console Strips
+  $('rngMixerMaster').value = m.masterVolume;
+  $('valMixerMaster').textContent = `${m.masterVolume > 0 ? '+' : ''}${Number(m.masterVolume).toFixed(1)}`;
+  $('btnMixerMasterLed').classList.toggle('active', !!m.enabled);
+  $('btnMixerMasterLed').textContent = m.enabled ? 'ON' : 'OFF';
+
+  $('rngMixerBacking').value = s.backing.volume;
+  $('valMixerBacking').textContent = s.backing.volume <= -60 ? '-∞' : `${s.backing.volume > 0 ? '+' : ''}${Number(s.backing.volume).toFixed(1)}`;
+  $('btnMixerBackingLed').classList.toggle('active', !s.backing.muted);
+  $('btnMixerBackingLed').textContent = s.backing.muted ? 'MUTE' : 'ON';
+
+  $('rngMixerVocal').value = s.vocal.volume;
+  $('valMixerVocal').textContent = s.vocal.volume <= -60 ? '-∞' : `${s.vocal.volume > 0 ? '+' : ''}${Number(s.vocal.volume).toFixed(1)}`;
+  $('btnMixerVocalLed').classList.toggle('active', !s.vocal.muted);
+  $('btnMixerVocalLed').textContent = s.vocal.muted ? 'MUTE' : 'ON';
+
+  // Sync FL 8-Slot Insert 2 FX Rack LEDs
+  const fxMasterOn = !!s.vocal.fxEnabled;
+  $('slotLedAutoTune').classList.toggle('active', fxMasterOn && !!fx.autoTuneEnabled);
+  $('slotLedEq').classList.toggle('active', fxMasterOn && fx.eqEnabled !== false);
+  $('slotLedComp').classList.toggle('active', fxMasterOn && fx.compEnabled !== false);
+  $('slotLedReverb').classList.toggle('active', fxMasterOn && fx.reverbEnabled !== false);
+  $('slotLedDelay').classList.toggle('active', fxMasterOn && fx.delayEnabled !== false);
+  $('slotLedHarmony').classList.toggle('active', fxMasterOn && !!fx.harmonyEnabled);
+  $('slotLedMod').classList.toggle('active', fxMasterOn && !!fx.modEnabled);
+  $('slotLedLofi').classList.toggle('active', fxMasterOn && (!!fx.lofiEnabled || !!fx.driveEnabled));
 
   // Creative FX Pills & Sliders
   setPill('btnToggleHarmony', fx.harmonyEnabled);
@@ -1432,6 +1609,7 @@ function animationLoop() {
   $('vocalGrVal').textContent = `-${gr.toFixed(1)} dB`;
 
   if ($('panel-vocal-fx').classList.contains('active')) {
+    topVu.drawVertical($('mixerMasterVu'));
     const atOn = !!(engine.state.vocal.fxEnabled && engine.state.vocalFx.autoTuneEnabled);
     const vDur = engine.activeVocalBuffer ? engine.activeVocalBuffer.duration : 0;
     const vPlayhead = Math.max(0, curTime - engine.state.vocal.syncOffsetMs / 1000);
@@ -1440,6 +1618,36 @@ function animationLoop() {
 
   requestAnimationFrame(animationLoop);
 }
+
+// ==========================================================================
+// FL Vertical Mixer Strips & 8-Slot FX Rack Bindings
+// ==========================================================================
+bindSlider('rngMixerMaster', (v) => { engine.state.master.masterVolume = v; engine.syncLiveParams(); });
+bindSlider('rngMixerBacking', (v) => { engine.state.backing.volume = v; engine.syncLiveParams(); });
+bindSlider('rngMixerVocal', (v) => { engine.state.vocal.volume = v; engine.syncLiveParams(); });
+
+$('btnMixerMasterLed').addEventListener('click', () => $('btnMasterToggle').click());
+$('btnMixerBackingLed').addEventListener('click', () => $('btnBackingMute').click());
+$('btnMixerVocalLed').addEventListener('click', () => $('btnVocalMute').click());
+
+$('slotLedAutoTune').addEventListener('click', () => toggleAutoTune());
+$('slotLedEq').addEventListener('click', () => $('btnToggleEq').click());
+$('slotLedComp').addEventListener('click', () => $('btnToggleComp').click());
+$('slotLedReverb').addEventListener('click', () => $('btnToggleReverb').click());
+$('slotLedDelay').addEventListener('click', () => $('btnToggleDelay').click());
+$('slotLedHarmony').addEventListener('click', () => $('btnToggleHarmony').click());
+$('slotLedMod').addEventListener('click', () => $('btnToggleMod').click());
+$('slotLedLofi').addEventListener('click', () => $('btnToggleLofi').click());
+
+document.querySelectorAll('[data-focus-module]').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const el = $(btn.dataset.focusModule);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.classList.add('flash-focus');
+    setTimeout(() => el.classList.remove('flash-focus'), 900);
+  });
+});
 
 // ==========================================================================
 // Initialize Studio

@@ -380,6 +380,35 @@ export class StereoVuMeter {
     drawBar(this.peakL, this.holdL, 0, barH);
     drawBar(this.peakR, this.holdR, barH + 4, barH);
   }
+
+  drawVertical(canvas) {
+    if (!canvas) return;
+    const { ctx, w, h } = prepCanvas(canvas);
+    ctx.clearRect(0, 0, w, h);
+
+    const drawCol = (val, hold, x, colW) => {
+      ctx.fillStyle = 'rgba(255,255,255,0.06)';
+      ctx.fillRect(x, 0, colW, h);
+
+      const grad = ctx.createLinearGradient(0, h, 0, 0);
+      grad.addColorStop(0, '#6cd957');
+      grad.addColorStop(0.75, '#ff8b2b');
+      grad.addColorStop(0.94, '#ef4747');
+      ctx.fillStyle = grad;
+      const fillH = val * h;
+      ctx.fillRect(x, h - fillH, colW, fillH);
+
+      if (hold > 0.02) {
+        const hy = Math.max(0, h - hold * h);
+        ctx.fillStyle = hold > 0.92 ? '#ef4747' : '#f8fafc';
+        ctx.fillRect(x, hy, colW, 2);
+      }
+    };
+
+    const colW = Math.max(3, Math.floor((w - 2) / 2));
+    drawCol(this.peakL, this.holdL, 0, colW);
+    drawCol(this.peakR, this.holdR, colW + 2, colW);
+  }
 }
 
 /**
